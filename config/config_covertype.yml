@@ -1,0 +1,24 @@
+# General parameters
+dataset: Covertype
+model_name: XGBoost # LinearModel, KNN, SVM, DecisionTree, RandomForest, XGBoost, CatBoost, LightGBM, ModelTree, TabNet
+objective: classification # Don't change
+
+# Optuna parameters - https://optuna.org/
+n_trials: 10
+direction: maximize
+
+# Cross validation parameters
+num_splits: 5
+shuffle: 'true'
+seed: 221 # Don't change
+
+# Preprocessing parameters
+scale: 'true'
+target_encode: 'true'
+target_one_hot_encode: 'false'
+
+# Classification parameters
+num_classes: 7
+
+# VIME parameters
+dim: 54

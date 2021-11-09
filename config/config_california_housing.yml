@@ -1,0 +1,26 @@
+# General parameters
+dataset: CaliforniaHousing
+model_name: TabNet # LinearModel, KNN, SVM, DecisionTree, RandomForest, XGBoost, CatBoost, LightGBM, ModelTree, TabNet
+objective: regression
+
+# Optuna parameters - https://optuna.org/
+n_trials: 10
+direction: minimize
+
+# Cross validation parameters
+num_splits: 5
+shuffle: 'true'
+seed: 221
+
+# Preprocessing parameters
+scale: 'true'
+target_encode: 'false'
+target_one_hot_encode: 'false'
+
+# Training parameters
+early_stopping_rounds: 20
+epochs: 1000
+logging_period: 100
+
+# VIME parameters
+dim: 8

@@ -1,0 +1,24 @@
+# General parameters
+dataset: CaliforniaHousing # CaliforniaHousing, Covertype
+model_name: DecisionTree # LinearModel, KNN, SVM, DecisionTree, RandomForest, XGBoost, CatBoost, LightGBM, ModelTree, TabNet
+objective: regression # classification, regression
+
+# Optuna parameters - https://optuna.org/
+n_trials: 10
+direction: minimize # minimize, maximize
+
+# Cross validation parameters
+num_splits: 5
+shuffle: 'true'
+seed: 221
+
+# Preprocessing parameters
+scale: 'true'
+target_encode: 'false'
+target_one_hot_encode: 'false' # True for classification
+
+# Classification parameters
+num_classes: 10
+
+# VIME parameters
+dim: 10
