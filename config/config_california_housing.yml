@@ -1,10 +1,10 @@
 # General parameters
 dataset: CaliforniaHousing
-model_name: TabNet # LinearModel, KNN, SVM, DecisionTree, RandomForest, XGBoost, CatBoost, LightGBM, ModelTree, TabNet
+model_name: KNN # LinearModel, KNN, SVM, DecisionTree, RandomForest, XGBoost, CatBoost, LightGBM, ModelTree, TabNet
 objective: regression
 
 # Optuna parameters - https://optuna.org/
-n_trials: 10
+n_trials: 100
 direction: minimize
 
 # Cross validation parameters

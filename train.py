@@ -1,9 +1,9 @@
 import optuna
 
 from models.baseline_models import LinearModel, KNN, SVM, DecisionTree, RandomForest
-from models.tree_models import XGBoost, CatBoost, LightGBM
-from models.modeltree import ModelTree
-from models.tabnet import TabNet
+#from models.tree_models import XGBoost, CatBoost, LightGBM
+#from models.modeltree import ModelTree
+#from models.tabnet import TabNet
 # from models.vime import VIME
 
 from utils.load_data import load_data
@@ -17,8 +17,8 @@ from sklearn.model_selection import KFold, StratifiedKFold, train_test_split
 str2model = {
     "LinearModel": LinearModel, "KNN": KNN, "SVM": SVM,
     "DecisionTree": DecisionTree, "RandomForest": RandomForest,
-    "XGBoost": XGBoost, "CatBoost": CatBoost, "LightGBM": LightGBM,
-    "ModelTree": ModelTree, "TabNet": TabNet,
+    #"XGBoost": XGBoost, "CatBoost": CatBoost, "LightGBM": LightGBM,
+    #"ModelTree": ModelTree, "TabNet": TabNet,
     #  "VIME": VIME
 }
 
@@ -57,7 +57,7 @@ def cross_validation(model, X, y, args, save_model=False):
         if save_model:
             curr_model.save_model_and_predictions(y_test, i)
 
-        #print(predictions)
+        # print(predictions)
 
         # Compute scores on the output
         sc.eval(y_test, predictions)
@@ -115,8 +115,9 @@ def main(args):
     cross_validation(model, X, y, args, save_model=True)
 
 
-parser = get_parser()
-arguments = parser.parse_args()
-print(arguments)
+if __name__ == "__main__":
+    parser = get_parser()
+    arguments = parser.parse_args()
+    print(arguments)
 
-main(arguments)
+    main(arguments)

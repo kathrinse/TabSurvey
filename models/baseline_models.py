@@ -50,7 +50,7 @@ class KNN(BaseModel):
     @classmethod
     def define_trial_parameters(cls, trial, args):
         params = {
-            "n_neighbors": trial.suggest_int("n_neighbors", list(range(3, 42, 2)))
+            "n_neighbors": trial.suggest_categorical("n_neighbors", list(range(3, 42, 2)))
         }
         return params
 
