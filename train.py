@@ -1,11 +1,6 @@
 import optuna
 
-from models.baseline_models import LinearModel, KNN, SVM, DecisionTree, RandomForest
-from models.tree_models import XGBoost, CatBoost, LightGBM
-from models.modeltree import ModelTree
-from models.tabnet import TabNet
-# from models.vime import VIME
-
+from models import str2model
 from utils.load_data import load_data
 from utils.scorer import get_scorer
 from utils.timer import Timer
@@ -14,14 +9,6 @@ from utils.parser import get_parser
 
 from sklearn.model_selection import KFold, StratifiedKFold, train_test_split
 from sklearn.preprocessing import OneHotEncoder
-
-str2model = {
-    "LinearModel": LinearModel, "KNN": KNN, "SVM": SVM,
-    "DecisionTree": DecisionTree, "RandomForest": RandomForest,
-    "XGBoost": XGBoost, "CatBoost": CatBoost, "LightGBM": LightGBM,
-    "ModelTree": ModelTree, "TabNet": TabNet,
-    #  "VIME": VIME
-}
 
 
 def cross_validation(model, X, y, args, save_model=False):
@@ -108,7 +95,7 @@ class Objective(object):
 def main(args):
     X, y = load_data(args)
 
-    model_name = str2model[args.model_name]
+    model_name = str2model(args.model_name)
 
     study = optuna.create_study(direction=args.direction)
     study.optimize(Objective(args, model_name, X, y), n_trials=args.n_trials)
