@@ -4,7 +4,7 @@ model_name: KNN # LinearModel, KNN, SVM, DecisionTree, RandomForest, XGBoost, Ca
 objective: regression
 
 # Optuna parameters - https://optuna.org/
-n_trials: 100
+n_trials: 10
 direction: minimize
 
 # Cross validation parameters

@@ -1,11 +1,11 @@
 # General parameters
 dataset: Covertype
-model_name: XGBoost # LinearModel, KNN, SVM, DecisionTree, RandomForest, XGBoost, CatBoost, LightGBM, ModelTree, TabNet
+model_name: CatBoost # LinearModel, KNN, SVM, DecisionTree, RandomForest, XGBoost, CatBoost, LightGBM, ModelTree, TabNet
 objective: classification # Don't change
 
 # Optuna parameters - https://optuna.org/
-n_trials: 10
-direction: maximize
+n_trials: 3
+direction: minimize
 
 # Cross validation parameters
 num_splits: 5
@@ -16,6 +16,11 @@ seed: 221 # Don't change
 scale: 'true'
 target_encode: 'true'
 target_one_hot_encode: 'false'
+
+# Training parameters
+early_stopping_rounds: 20
+epochs: 1000
+logging_period: 100
 
 # Classification parameters
 num_classes: 7

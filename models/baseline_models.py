@@ -22,7 +22,7 @@ class LinearModel(BaseModel):
         if args.objective == "regression":
             self.model = linear_model.LinearRegression(n_jobs=-1)
         elif args.objective == "classification":
-            self.model = linear_model.LogisticRegression(n_jobs=-1)
+            self.model = linear_model.LogisticRegression(multi_class="multinomial", n_jobs=-1)
 
     @classmethod
     def define_trial_parameters(cls, trial, args):
@@ -70,7 +70,7 @@ class SVM(BaseModel):
         if args.objective == "regression":
             self.model = svm.SVR(C=params["C"])
         elif args.objective == "classification":
-            self.model = svm.SVC(C=params["C"])
+            self.model = svm.SVC(C=params["C"], probability=True)
 
     @classmethod
     def define_trial_parameters(cls, trial, args):

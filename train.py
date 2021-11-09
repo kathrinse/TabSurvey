@@ -1,9 +1,9 @@
 import optuna
 
 from models.baseline_models import LinearModel, KNN, SVM, DecisionTree, RandomForest
-#from models.tree_models import XGBoost, CatBoost, LightGBM
-#from models.modeltree import ModelTree
-#from models.tabnet import TabNet
+from models.tree_models import XGBoost, CatBoost, LightGBM
+from models.modeltree import ModelTree
+from models.tabnet import TabNet
 # from models.vime import VIME
 
 from utils.load_data import load_data
@@ -13,12 +13,13 @@ from utils.io_utils import save_results_to_file
 from utils.parser import get_parser
 
 from sklearn.model_selection import KFold, StratifiedKFold, train_test_split
+from sklearn.preprocessing import OneHotEncoder
 
 str2model = {
     "LinearModel": LinearModel, "KNN": KNN, "SVM": SVM,
     "DecisionTree": DecisionTree, "RandomForest": RandomForest,
-    #"XGBoost": XGBoost, "CatBoost": CatBoost, "LightGBM": LightGBM,
-    #"ModelTree": ModelTree, "TabNet": TabNet,
+    "XGBoost": XGBoost, "CatBoost": CatBoost, "LightGBM": LightGBM,
+    "ModelTree": ModelTree, "TabNet": TabNet,
     #  "VIME": VIME
 }
 
@@ -35,6 +36,11 @@ def cross_validation(model, X, y, args, save_model=False):
         kf = StratifiedKFold(n_splits=args.num_splits, shuffle=args.shuffle, random_state=args.seed)
 
     for i, (train_index, test_index) in enumerate(kf.split(X, y)):
+
+        if args.target_one_hot_encode:
+            enc = OneHotEncoder()
+            y = enc.fit_transform(y.reshape(-1, 1)).toarray()
+
         X_train, X_test = X[train_index], X[test_index]
         y_train, y_test = y[train_index], y[test_index]
 
@@ -56,8 +62,6 @@ def cross_validation(model, X, y, args, save_model=False):
         # Save model weights and the truth/prediction pairs for traceability
         if save_model:
             curr_model.save_model_and_predictions(y_test, i)
-
-        # print(predictions)
 
         # Compute scores on the output
         sc.eval(y_test, predictions)

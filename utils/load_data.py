@@ -20,9 +20,9 @@ def load_data(args):
         le = LabelEncoder()
         y = le.fit_transform(y)
 
-    if args.target_one_hot_encode:
-        enc = OneHotEncoder()
-        y = enc.fit_transform(y.reshape(-1, 1)).toarray()
+    #if args.target_one_hot_encode:
+     #   enc = OneHotEncoder()
+     #   y = enc.fit_transform(y.reshape(-1, 1)).toarray()
 
     # Preprocess data
     if args.scale:

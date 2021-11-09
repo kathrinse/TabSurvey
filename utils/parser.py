@@ -8,7 +8,7 @@ def get_parser():
 
     # Put all parameters into config_california_housing.yml file!
     parser.add('-config', '--config', required=False, is_config_file_arg=True, help='config file path',
-               default="config/config_california_housing.yml")
+               default="config/config_covertype.yml")  # california_housing
 
     parser.add('--model_name', required=True, help="Name of the model that should be trained")
     parser.add('--dataset', required=True, help="Name of the dataset that will be used")

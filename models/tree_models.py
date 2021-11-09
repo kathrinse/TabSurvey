@@ -27,7 +27,7 @@ class XGBoost(BaseModel):
             self.params["objective"] = "reg:squarederror"
             self.params["eval_metric"] = "rmse"
         elif args.objective == "classification":
-            self.params["objective"] = "multi:softmax"
+            self.params["objective"] = "multi:softprob"
             self.params["num_class"] = args.num_classes
             self.params["eval_metric"] = "mlogloss"
 
@@ -41,7 +41,7 @@ class XGBoost(BaseModel):
 
     def predict(self, X):
         test = xgb.DMatrix(X)
-        self.predictions = self.model.predict(test)  # get probabilities!
+        self.predictions = self.model.predict(test)
         return self.predictions
 
     @classmethod
@@ -114,6 +114,11 @@ class LightGBM(BaseModel):
         self.model = lgb.train(self.params, train, num_boost_round=self.args.epochs, valid_sets=[val],
                                valid_names=["eval"], callbacks=[lgb.early_stopping(self.args.early_stopping_rounds),
                                                                 lgb.log_evaluation(self.args.logging_period)])
+
+    def predict(self, X):
+        # Predicts probabilities if the task is classification
+        self.predictions = self.model.predict(X)
+        return self.predictions
 
     @classmethod
     def define_trial_parameters(cls, trial, args):

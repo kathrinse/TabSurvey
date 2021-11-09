@@ -1,6 +1,7 @@
 */__pycache__/*
 
 .idea/
+.ipynb_checkpoints/
 
 catboost_info/
 output/

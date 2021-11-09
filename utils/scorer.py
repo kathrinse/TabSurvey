@@ -61,13 +61,18 @@ class ClassScorer(Scorer):
         self.accs = []
         self.f1s = []
 
+    '''
+        y_true: (n_samples,)
+        y_pred: (n_samples, n_classes) - probabilities of the classes (summing to 1)
+    '''
     def eval(self, y_true, y_pred):
-        #logloss = log_loss(y_true, y_pred, labels=list(range(0, 7)))
-        logloss = 1  # needs proba!
-        #auc = roc_auc_score(y_true, y_pred)
-        auc = 1  # needs proba!
-        acc = accuracy_score(y_true, y_pred)
-        f1 = f1_score(y_true, y_pred, average="micro")  # use here macro or weighted?
+        logloss = log_loss(y_true, y_pred)
+        auc = roc_auc_score(y_true, y_pred, multi_class='ovr')
+
+        # Accuracy and F1 score need the final label predictions
+        pred_label = np.argmax(y_pred, axis=1)
+        acc = accuracy_score(y_true, pred_label)
+        f1 = f1_score(y_true, pred_label, average="micro")  # use here macro or weighted?
 
         self.loglosses.append(logloss)
         self.aucs.append(auc)
@@ -99,5 +104,4 @@ class ClassScorer(Scorer):
                 "F1 score - std": f1_std}
 
     def get_objective_result(self):
-        #return np.mean(self.loglosses)
-        return np.mean(self.accs)
+        return np.mean(self.loglosses)
