@@ -32,6 +32,10 @@ def str2model(model):
         from models.tree_models import LightGBM
         return LightGBM
 
+    elif model == "MLP":
+        from models.mlp import MLP
+        return MLP
+
     elif model == "ModelTree":
         from models.modeltree import ModelTree
         return ModelTree

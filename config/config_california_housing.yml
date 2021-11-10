@@ -1,6 +1,6 @@
 # General parameters
 dataset: CaliforniaHousing
-model_name: KNN # LinearModel, KNN, SVM, DecisionTree, RandomForest, XGBoost, CatBoost, LightGBM, ModelTree, TabNet
+model_name: MLP # LinearModel, KNN, SVM, DecisionTree, RandomForest, XGBoost, CatBoost, LightGBM, ModelTree, TabNet, MLP
 objective: regression
 
 # Optuna parameters - https://optuna.org/
@@ -22,5 +22,6 @@ early_stopping_rounds: 20
 epochs: 1000
 logging_period: 100
 
-# VIME parameters
-dim: 8
+# About the data
+num_features: 8
+num_classes: 1 # always one for regression!

@@ -1,10 +1,10 @@
 # General parameters
 dataset: Covertype
-model_name: CatBoost # LinearModel, KNN, SVM, DecisionTree, RandomForest, XGBoost, CatBoost, LightGBM, ModelTree, TabNet
+model_name: MLP # LinearModel, KNN, SVM, DecisionTree, RandomForest, XGBoost, CatBoost, LightGBM, ModelTree, TabNet
 objective: classification # Don't change
 
 # Optuna parameters - https://optuna.org/
-n_trials: 3
+n_trials: 10
 direction: minimize
 
 # Cross validation parameters
@@ -22,8 +22,6 @@ early_stopping_rounds: 20
 epochs: 1000
 logging_period: 100
 
-# Classification parameters
-num_classes: 7
-
-# VIME parameters
-dim: 54
+# About the data
+num_classes: 7 # for classification
+num_features: 54

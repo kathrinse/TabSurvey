@@ -1,7 +1,4 @@
 from pytorch_tabnet.tab_model import TabNetClassifier, TabNetRegressor
-from pytorch_tabnet.multitask import TabNetMultiTaskClassifier
-
-import numpy as np
 
 from models.basemodel import BaseModel
 
@@ -17,18 +14,20 @@ class TabNet(BaseModel):
         if args.objective == "regression":
             self.model = TabNetRegressor(**self.params)
         elif args.objective == "classification":
-            self.model = TabNetMultiTaskClassifier(**self.params)
+            self.model = TabNetClassifier(**self.params)
 
     def fit(self, X, y, X_val=None, y_val=None):
-        y, y_val = y.reshape(-1, 1), y_val.reshape(-1, 1)
-        self.model.fit(X, y, eval_set=[(X_val, y_val)], eval_name=["eval"], eval_metric=["rmse"],
+        if self.args.objective == "regression":
+            y, y_val = y.reshape(-1, 1), y_val.reshape(-1, 1)
+            metric = ["rmse"]
+        elif self.args.objective == "classification":
+            metric = ["logloss"]
+
+        self.model.fit(X, y, eval_set=[(X_val, y_val)], eval_name=["eval"], eval_metric=metric,
                        max_epochs=self.args.epochs, patience=self.args.early_stopping_rounds, batch_size=128)
 
     def predict(self, X):
         return super().predict(X)
-        #self.predictions = self.model.predict_proba(X)
-        #self.predictions = np.argmax(self.predictions, axis=2).transpose()
-        #return self.predictions
 
     @classmethod
     def define_trial_parameters(cls, trial, args):

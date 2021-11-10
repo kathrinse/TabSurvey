@@ -8,7 +8,7 @@ def get_parser():
 
     # Put all parameters into config_california_housing.yml file!
     parser.add('-config', '--config', required=False, is_config_file_arg=True, help='config file path',
-               default="config/config_covertype.yml")  # california_housing
+               default="config/config_covertype.yml")  # config_california_housing
 
     parser.add('--model_name', required=True, help="Name of the model that should be trained")
     parser.add('--dataset', required=True, help="Name of the dataset that will be used")
@@ -31,7 +31,7 @@ def get_parser():
     parser.add('--epochs', type=int, help="Max number of epochs to train.")
     parser.add('--logging_period', type=int, help="Number of iteration after which validation is printed.")
 
-    parser.add('--dim', type=int, help="Set the total number of features.")
+    parser.add('--num_features', type=int, help="Set the total number of features.")
     parser.add('--num_classes', type=int, help="Set the number of classes in a classification task.")
 
     # Todo: Validate the arguments
