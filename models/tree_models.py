@@ -23,6 +23,10 @@ class XGBoost(BaseModel):
 
         self.params["verbosity"] = 1
 
+        if args.use_gpu:
+            self.params["tree_method"] = "gpu_hist"
+            self.params["gpu_id"] = args.gpu_id
+
         if args.objective == "regression":
             self.params["objective"] = "reg:squarederror"
             self.params["eval_metric"] = "rmse"
@@ -69,6 +73,10 @@ class CatBoost(BaseModel):
         self.params["od_type"] = "Iter"
         self.params["od_wait"] = self.args.early_stopping_rounds
         self.params["verbose"] = self.args.logging_period
+
+        if args.use_gpu:
+            self.params["task_type"] = "GPU"
+            self.params["devices"] = [0]
 
         if args.objective == "regression":
             self.model = cat.CatBoostRegressor(**self.params)

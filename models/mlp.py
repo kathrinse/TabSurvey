@@ -6,7 +6,7 @@ from torch.utils.data import TensorDataset, DataLoader
 
 from models.basemodel import BaseModel
 
-import os
+from utils.io_utils import get_output_path
 
 
 class MLP(BaseModel, nn.Module):
@@ -114,13 +114,8 @@ class MLP(BaseModel, nn.Module):
         return self.predictions
 
     def save_model(self, filename_extension=""):
-        path = "output/" + self.args.model_name + "/" + self.args.dataset + "/models"
-
-        if not os.path.isdir(path):
-            os.makedirs(path)
-
-        filename = path + "/m_" + str(filename_extension) + ".pt"
-
+        filename = get_output_path(self.args, directory="models", filename="m", extension=filename_extension,
+                                   file_type="pt")
         torch.save(self.state_dict(), filename)
 
     @classmethod

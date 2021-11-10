@@ -15,6 +15,9 @@ def get_parser():
     parser.add('--objective', type=str, default="regression", choices=["regression", "classification"],
                help="Regression or Classification task")
 
+    parser.add('--use_gpu', action="store_true", help="Set to true if GPU is available")
+    parser.add('--gpu_id', type=int, help="")
+
     parser.add('--n_trials', type=int, default=100, help="Number of trials of the hyperparameter optimization")
     parser.add('--direction', type=str, default="minimize", choices=['minimize', 'maximize'],
                help="Direction of optimization.")

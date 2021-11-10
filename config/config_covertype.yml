@@ -1,10 +1,14 @@
 # General parameters
 dataset: Covertype
-model_name: MLP # LinearModel, KNN, SVM, DecisionTree, RandomForest, XGBoost, CatBoost, LightGBM, ModelTree, TabNet
+model_name: LinearModel # LinearModel, KNN, SVM, DecisionTree, RandomForest, XGBoost, CatBoost, LightGBM, ModelTree, TabNet
 objective: classification # Don't change
 
+# GPU parameters
+use_gpu: 'false'
+gpu_id: 0
+
 # Optuna parameters - https://optuna.org/
-n_trials: 10
+n_trials: 3
 direction: minimize
 
 # Cross validation parameters
