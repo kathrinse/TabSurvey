@@ -16,7 +16,7 @@ def save_model_to_file(model, args, extension=""):
 
 
 def save_results_to_file(args, results, train_time=None, test_time=None, best_params=None):
-    filename = get_output_path(args, filename="results", type="txt")
+    filename = get_output_path(args, filename="results", file_type="txt")
 
     with open(filename, "w") as text_file:
         text_file.write(args.model_name + " - " + args.dataset + "\n\n")
