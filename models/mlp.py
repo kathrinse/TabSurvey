@@ -19,21 +19,25 @@ class MLP(BaseModel, nn.Module):
         hidden_dim = self.params["hidden_dim"]
         output_dim = self.args.num_classes  # 1 for regression, 2 for binary?
 
+        self.layers = nn.ModuleList()
+
+        # Input Layer (= first hidden layer)
         self.input_layer = nn.Linear(input_dim, hidden_dim)
 
-        self.hidden_layers = []
-        for i in range(self.params["n_layers"]-1):
-            self.hidden_layers.append(nn.Linear(hidden_dim, hidden_dim))
+        # Hidden Layers (number specified by n_layers)
+        self.layers.extend([nn.Linear(hidden_dim, hidden_dim) for _ in range(self.params["n_layers"]-1)])
 
-        # self.hidden_layer = nn.Linear(hidden_dim, hidden_dim)
+        # Output Layer
         self.output_layer = nn.Linear(hidden_dim, output_dim)
 
     def forward(self, x):
         x = F.relu(self.input_layer(x))
 
-        for i in range(self.params["n_layers"]-1):
-            x = F.relu(self.hidden_layers[i](x))
+        # Use ReLU as activation for all hidden layers
+        for layer in self.layers:
+            x = F.relu(layer(x))
 
+        # No activation function on the output
         x = self.output_layer(x)
 
         if self.args.objective == "classification":
@@ -116,6 +120,7 @@ class MLP(BaseModel, nn.Module):
             os.makedirs(path)
 
         filename = path + "/m_" + str(filename_extension) + ".pt"
+
         torch.save(self.state_dict(), filename)
 
     @classmethod
