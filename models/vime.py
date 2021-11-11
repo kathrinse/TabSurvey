@@ -1,199 +1,206 @@
 import numpy as np
-import pandas as pd
-from sklearn.metrics import accuracy_score, roc_auc_score
 
-from keras.layers import Input, Dense
-from keras.models import Model
-from keras import models
-import tensorflow as tf
-from tensorflow.contrib import layers as contrib_layers
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+from torch.utils.data import TensorDataset, DataLoader
 
 from models.basemodel import BaseModel
+from utils.io_utils import get_output_path
 
 
 class VIME(BaseModel):
-    # Define all hyperparameters which are optimized
-    PM = "p_m"
-    ALPHA = "alpha"
-    K = "K"
-    BETA = "beta"
 
     def __init__(self, params, args):
         super().__init__(params, args)
-        self.model_self = self.init_self(self.params[self.ALPHA])
 
-        self.x_input = tf.placeholder(tf.float32, [None, args.dim])
-        self.y_input = tf.placeholder(tf.float32, [None, args.num_classes])
-        self.xu_input = tf.placeholder(tf.float32, [None, None, args.dim])
+        hidden_dim = 100
+        self.batch_size = 128
 
-        # Build model
-        y_hat_logit, self.y_hat = self.predictor(self.x_input)
-        yv_hat_logit, yv_hat = self.predictor(self.xu_input)
+        self.model_self = VIMESelf(args.num_features)
+        self.model_semi = VIMESemi(args, args.num_features, hidden_dim, args.num_classes)
 
-        # Supervised loss
-        self.y_loss = tf.losses.softmax_cross_entropy(self.y_input, y_hat_logit)
-        # Unsupervised loss
-        yu_loss = tf.reduce_mean(tf.nn.moments(yv_hat_logit, axes=0)[1])
-
-        # Define variables
-        p_vars = [v for v in tf.trainable_variables() if v.name.startswith('predictor')]
-
-        # Define solver
-        with tf.variable_scope('solver', reuse=tf.AUTO_REUSE):
-            self.solver = tf.train.AdamOptimizer().minimize(self.y_loss + self.params[self.BETA] * yu_loss,
-                                                            var_list=p_vars)
-
-        # Start session
-        self.sess = tf.Session()
-        self.sess.run(tf.global_variables_initializer())
-
-    def fit(self, X, y):
-        x_unlab, x_label, y_label = split_data(X, y)
-
-        encoder = self.train_self(x_unlab, self.params[self.PM])
-        self.train_semi(encoder, x_label, y_label, x_unlab, self.params[self.PM], self.params[self.K])
+    def fit(self, X, y, X_val=None, y_val=None):
+        X_unlab = np.concatenate([X, X_val], axis=0)
+        self.fit_self(X_unlab, p_m=self.params["p_m"], alpha=self.params["alpha"])
+        self.fit_semi(X, y, X, X_val, y_val, p_m=self.params["p_m"], K=self.params["K"], beta=self.params["beta"])
 
     def predict(self, X):
-        self.predictions = self.sess.run(self.y_hat, feed_dict={self.x_input: X})
-        self.predictions = np.argmax(self.predictions, axis=1)
-
-        # One Hot encode output
-        self.predictions = pd.get_dummies(self.predictions)
+        X = torch.tensor(X).float()
+        X_encoded = self.model_self.input_layer(X)
+        y_hat = self.model_semi(X_encoded)
+        self.predictions = y_hat.detach().numpy()
         return self.predictions
+
+    def fit_self(self, X, p_m=0.3, alpha=2):
+        optimizer = optim.RMSprop(self.model_self.parameters(), lr=0.001)
+        loss_func_mask = nn.BCELoss()
+        loss_func_feat = nn.MSELoss()
+
+        m_unlab = mask_generator(p_m, X)
+        m_label, x_tilde = pretext_generator(m_unlab, X)
+
+        x_tilde = torch.tensor(x_tilde).float()
+        m_label = torch.tensor(m_label).float()
+        X = torch.tensor(X).float()
+        train_dataset = TensorDataset(x_tilde, m_label, X)
+        train_loader = DataLoader(dataset=train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=2)
+
+        for epoch in range(10):
+            for batch_X, batch_mask, batch_feat in train_loader:
+                out_mask, out_feat = self.model_self(batch_X)
+
+                loss_mask = loss_func_mask(out_mask, batch_mask)
+                loss_feat = loss_func_feat(out_feat, batch_feat)
+
+                loss = loss_mask + loss_feat * alpha
+
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+
+    def fit_semi(self, X, y, x_unlab, X_val=None, y_val=None, p_m=0.3, K=3, beta=1):
+
+        X = torch.tensor(X).float()
+        y = torch.tensor(y)
+        x_unlab = torch.tensor(x_unlab).float()
+
+        X_val = torch.tensor(X_val).float()
+        y_val = torch.tensor(y_val)
+
+        if self.args.objective == "regression":
+            loss_func_supervised = nn.MSELoss()
+            y = y.float()
+            y_val = y_val.float()
+        elif self.args.objective == "classification":
+            loss_func_supervised = nn.CrossEntropyLoss()
+
+        optimizer = optim.AdamW(self.model_semi.parameters())
+
+        train_dataset = TensorDataset(X, y, x_unlab)
+        train_loader = DataLoader(dataset=train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=2,
+                                  drop_last=True)
+
+        val_dataset = TensorDataset(X_val, y_val)
+        val_loader = DataLoader(dataset=val_dataset, batch_size=self.batch_size, shuffle=True)
+
+        val_dim = y_val.shape[0]
+        min_val_loss = float("inf")
+        min_val_loss_idx = 0
+
+        for epoch in range(1000):
+            for i, (batch_X, batch_y, batch_unlab) in enumerate(train_loader):
+
+                batch_X_encoded = self.model_self.input_layer(batch_X)
+                y_hat = self.model_semi(batch_X_encoded)
+
+                yv_hats = torch.empty(K, self.batch_size, self.args.num_classes)
+                for rep in range(K):
+                    m_batch = mask_generator(p_m, batch_unlab)
+                    _, batch_unlab_tmp = pretext_generator(m_batch, batch_unlab)
+
+                    batch_unlab_encoded = self.model_self.input_layer(batch_unlab_tmp.float())
+                    yv_hat = self.model_semi(batch_unlab_encoded)
+                    yv_hats[rep] = yv_hat
+
+                if self.args.objective == "regression":
+                    y_hat = y_hat.squeeze()
+
+                y_loss = loss_func_supervised(y_hat, batch_y)
+                yu_loss = torch.mean(torch.var(yv_hats, dim=0))
+                loss = y_loss + beta * yu_loss
+
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+
+                # Early Stopping
+                val_loss = 0.0
+                for val_i, (batch_val_X, batch_val_y) in enumerate(val_loader):
+                    batch_val_X_encoded = self.model_self.input_layer(batch_val_X)
+                    y_hat = self.model_semi(batch_val_X_encoded)
+
+                    if self.args.objective == "regression":
+                        y_hat = y_hat.squeeze()
+
+                    val_loss += loss_func_supervised(y_hat, batch_val_y)
+
+                val_loss /= val_dim
+
+                current_idx = (i + 1) * (epoch + 1)
+
+                if val_loss < min_val_loss:
+                    min_val_loss = val_loss
+                    min_val_loss_idx = current_idx
+
+                if min_val_loss_idx + self.args.early_stopping_rounds < current_idx:
+                    print("Early stopping applies.", i)
+                    return
+
+    def save_model(self, filename_extension=""):
+        filename_self = get_output_path(self.args, directory="models", filename="m_self", extension=filename_extension,
+                                        file_type="pt")
+        torch.save(self.model_self.state_dict(), filename_self)
+
+        filename_semi = get_output_path(self.args, directory="models", filename="m_semi", extension=filename_extension,
+                                        file_type="pt")
+        torch.save(self.model_semi.state_dict(), filename_semi)
 
     @classmethod
     def define_trial_parameters(cls, trial, args):
         params = {
-            cls.PM: trial.suggest_float(cls.PM, 0.1, 0.9),
-            cls.ALPHA: trial.suggest_float(cls.ALPHA, 0.5, 3.0),
-            cls.K: trial.suggest_int(cls.K, 2, 10),
-            cls.BETA: trial.suggest_float(cls.BETA, 0.5, 3.0)
+            "p_m": trial.suggest_float("p_m", 0.1, 0.9),
+            "alpha": trial.suggest_float("alpha", 0.5, 3.0),
+            "K": trial.suggest_int("K", 2, 10),
+            "beta": trial.suggest_float("beta", 0.5, 3.0)
         }
         return params
 
-    def init_self(self, alpha):
-        dim = self.args.dim
-        # Build model
-        inputs = Input(shape=(dim,))
-        # Encoder
-        h = Dense(int(dim), activation='relu')(inputs)
-        # Mask estimator
-        output_1 = Dense(dim, activation='sigmoid', name='mask')(h)
-        # Feature estimator
-        output_2 = Dense(dim, activation='sigmoid', name='feature')(h)
 
-        model = Model(inputs=inputs, outputs=[output_1, output_2])
+class VIMESelf(nn.Module):
 
-        model.compile(optimizer='rmsprop',
-                      loss={'mask': 'binary_crossentropy',
-                            'feature': 'mean_squared_error'},
-                      loss_weights={'mask': 1, 'feature': alpha})
+    def __init__(self, input_dim):
+        super().__init__()
 
-        return model
+        self.input_layer = nn.Linear(input_dim, input_dim)
 
-    def train_self(self, x_unlab, p_m):
-        # Generate corrupted samples
-        m_unlab = mask_generator(p_m, x_unlab)
-        m_label, x_tilde = pretext_generator(m_unlab, x_unlab)
+        self.mask_layer = nn.Linear(input_dim, input_dim)
+        self.feat_layer = nn.Linear(input_dim, input_dim)
 
-        # Fit model on unlabeled data
-        self.model_self.fit(x_tilde, {'mask': m_label, 'feature': x_unlab}, epochs=10, batch_size=128)
+    def forward(self, x):
+        x = F.relu(self.input_layer(x))
 
-        # Extract encoder part
-        layer_name = self.model_self.layers[1].name
-        layer_output = self.model_self.get_layer(layer_name).output
-        encoder = models.Model(inputs=self.model_self.input, outputs=layer_output)
+        out_mask = torch.sigmoid(self.mask_layer(x))
+        out_feat = torch.sigmoid(self.feat_layer(x))
 
-        return encoder
+        return out_mask, out_feat
 
-    def predictor(self, x_input):
-        hidden_dim = 100
-        act_fn = tf.nn.relu
 
-        with tf.variable_scope('predictor', reuse=tf.AUTO_REUSE):
-            # Stacks multi-layered perceptron
-            inter_layer = contrib_layers.fully_connected(x_input,
-                                                         hidden_dim,
-                                                         activation_fn=act_fn)
-            inter_layer = contrib_layers.fully_connected(inter_layer,
-                                                         hidden_dim,
-                                                         activation_fn=act_fn)
+class VIMESemi(nn.Module):
 
-            y_hat_logit = contrib_layers.fully_connected(inter_layer,
-                                                         self.args.num_classes,
-                                                         activation_fn=None)
-            y_hat = tf.nn.softmax(y_hat_logit)
+    def __init__(self, args, input_dim, hidden_dim, output_dim):
+        super().__init__()
+        self.args = args
 
-        return y_hat_logit, y_hat
+        self.input_layer = nn.Linear(input_dim, hidden_dim)
+        self.hidden_layer = nn.Linear(hidden_dim, hidden_dim)
+        self.output_layer = nn.Linear(hidden_dim, output_dim)
 
-    def train_semi(self, encoder, x_train, y_train, x_unlab, p_m, K):
-        batch_size = 128
-        iterations = 1000
+    def forward(self, x):
+        x = F.relu(self.input_layer(x))
+        x = F.relu(self.hidden_layer(x))
+        out = self.output_layer(x)
 
-        yv_loss_min_idx = -1
+        if self.args.objective == "classification":
+            out = F.softmax(out, dim=1)
 
-        # Training iteration loop
-        for it in range(iterations):
-
-            # Select a batch of labeled data
-            batch_idx = np.random.permutation(len(x_train[:, 0]))[:batch_size]
-            x_batch = x_train[batch_idx, :]
-            y_batch = y_train[batch_idx, :]
-
-            # Encode labeled data
-            x_batch = encoder.predict(x_batch)
-
-            # Select a batch of unlabeled data
-            batch_u_idx = np.random.permutation(len(x_unlab[:, 0]))[:batch_size]
-            xu_batch_ori = x_unlab[batch_u_idx, :]
-
-            # Augment unlabeled data
-            xu_batch = list()
-
-            for rep in range(K):
-                # Mask vector generation
-                m_batch = mask_generator(p_m, xu_batch_ori)
-                # Pretext generator
-                _, xu_batch_temp = pretext_generator(m_batch, xu_batch_ori)
-
-                # Encode corrupted samples
-                xu_batch_temp = encoder.predict(xu_batch_temp)
-                xu_batch = xu_batch + [xu_batch_temp]
-            # Convert list to matrix
-            xu_batch = np.asarray(xu_batch)
-
-            # Train the model
-            _, y_loss_curr = self.sess.run([self.solver, self.y_loss],
-                                           feed_dict={self.x_input: x_batch, self.y_input: y_batch,
-                                                      self.xu_input: xu_batch})
-
-            if yv_loss_min_idx + 100 < it:
-                break
+        return out
 
 
 '''
-    All VIME code copied: https://github.com/jsyoon0823/VIME
+    VIME code copied from: https://github.com/jsyoon0823/VIME
 '''
-
-
-def split_data(X, y):
-    label_data_rate = 0.1
-
-    # Divide labeled and unlabeled data
-    idx = np.random.permutation(len(y))
-
-    # Label data : Unlabeled data = label_data_rate:(1-label_data_rate)
-    label_idx = idx[:int(len(idx) * label_data_rate)]
-    unlab_idx = idx[int(len(idx) * label_data_rate):]
-
-    # Unlabeled data
-    x_unlab = X[unlab_idx, :]
-
-    # Labeled data
-    x_label = X[label_idx, :]
-    y_label = y[label_idx, :]
-
-    return x_unlab, x_label, y_label
 
 
 def mask_generator(p_m, x):
@@ -216,44 +223,3 @@ def pretext_generator(m, x):
     m_new = 1 * (x != x_tilde)
 
     return m_new, x_tilde
-
-
-def perf_metric(metric, y_test, y_test_hat):
-    # Accuracy metric
-    if metric == 'acc':
-        result = accuracy_score(np.argmax(y_test, axis=1),
-                                np.argmax(y_test_hat, axis=1))
-    # AUROC metric
-    elif metric == 'auc':
-        result = roc_auc_score(y_test[:, 1], y_test_hat[:, 1])
-
-    return result
-
-
-def convert_matrix_to_vector(matrix):
-    # Parameters
-    no, dim = matrix.shape
-    # Define output
-    vector = np.zeros([no, ])
-
-    # Convert matrix to vector
-    for i in range(dim):
-        idx = np.where(matrix[:, i] == 1)
-        vector[idx] = i
-
-    return vector
-
-
-def convert_vector_to_matrix(vector):
-    # Parameters
-    no = len(vector)
-    dim = len(np.unique(vector))
-    # Define output
-    matrix = np.zeros([no, dim])
-
-    # Convert vector to matrix
-    for i in range(dim):
-        idx = np.where(vector == i)
-        matrix[idx, i] = 1
-
-    return matrix

@@ -43,7 +43,7 @@ def get_output_path(args, filename, file_type, directory=None, extension=None):
 
     file_path = dir_path + "/" + filename
 
-    if extension:
+    if extension is not None:
         file_path += "_" + str(extension)
 
     file_path += "." + file_type

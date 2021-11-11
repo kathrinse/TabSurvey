@@ -30,6 +30,10 @@ class MLP(BaseModel, nn.Module):
         # Output Layer
         self.output_layer = nn.Linear(hidden_dim, output_dim)
 
+        self.device = torch.device('cuda' if args.use_gpu and torch.cuda.is_available() else 'cpu')
+        print("On Device:", self.device)
+        self.to(self.device)
+
     def forward(self, x):
         x = F.relu(self.input_layer(x))
 
@@ -75,12 +79,12 @@ class MLP(BaseModel, nn.Module):
         for epoch in range(self.args.epochs):
             for i, (batch_X, batch_y) in enumerate(train_loader):
 
-                out = self.forward(batch_X)
+                out = self.forward(batch_X.to(self.device))
 
                 if self.args.objective == "regression":
                     out = out.squeeze()
 
-                loss = loss_func(out, batch_y)
+                loss = loss_func(out, batch_y.to(self.device))
 
                 optimizer.zero_grad()
                 loss.backward()
@@ -89,12 +93,12 @@ class MLP(BaseModel, nn.Module):
                 # Early Stopping
                 val_loss = 0.0
                 for val_i, (batch_val_X, batch_val_y) in enumerate(val_loader):
-                    out = self.forward(batch_val_X)
+                    out = self.forward(batch_val_X.to(self.device))
 
                     if self.args.objective == "regression":
                         out = out.squeeze()
 
-                    val_loss += loss_func(out.squeeze(), batch_val_y)
+                    val_loss += loss_func(out, batch_val_y.to(self.device))
                 val_loss /= val_dim
 
                 current_idx = (i+1) * (epoch+1)
@@ -109,7 +113,7 @@ class MLP(BaseModel, nn.Module):
                     return
 
     def predict(self, X):
-        X = torch.tensor(X).float()
+        X = torch.tensor(X).float().to(self.device)
         self.predictions = self.forward(X).detach().numpy()
         return self.predictions
 
