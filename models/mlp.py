@@ -57,7 +57,7 @@ class MLP(BaseModel, nn.Module):
         if self.args.objective == "regression":
             loss_func = nn.MSELoss()
             y = y.float()
-            y_val = y.float()
+            y_val = y_val.float()
         elif self.args.objective == "classification":
             loss_func = nn.CrossEntropyLoss()
 
