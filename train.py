@@ -24,10 +24,6 @@ def cross_validation(model, X, y, args, save_model=False):
 
     for i, (train_index, test_index) in enumerate(kf.split(X, y)):
 
-        if args.target_one_hot_encode:
-            enc = OneHotEncoder()
-            y = enc.fit_transform(y.reshape(-1, 1)).toarray()
-
         X_train, X_test = X[train_index], X[test_index]
         y_train, y_test = y[train_index], y[test_index]
 

@@ -67,7 +67,7 @@ class ClassScorer(Scorer):
     '''
     def eval(self, y_true, y_pred):
         logloss = log_loss(y_true, y_pred)
-        auc = roc_auc_score(y_true, y_pred, multi_class='ovr')
+        auc = roc_auc_score(y_true, y_pred, multi_class='ovr', average="micro")
 
         # Accuracy and F1 score need the final label predictions
         pred_label = np.argmax(y_pred, axis=1)

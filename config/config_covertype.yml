@@ -1,6 +1,6 @@
 # General parameters
 dataset: Covertype
-model_name: LinearModel # LinearModel, KNN, SVM, DecisionTree, RandomForest, XGBoost, CatBoost, LightGBM, ModelTree, TabNet
+model_name: LinearModel # LinearModel, KNN, SVM, DecisionTree, RandomForest, XGBoost, CatBoost, LightGBM, ModelTree, TabNet, VIME
 objective: classification # Don't change
 
 # GPU parameters
@@ -19,7 +19,6 @@ seed: 221 # Don't change
 # Preprocessing parameters
 scale: 'true'
 target_encode: 'true'
-target_one_hot_encode: 'false'
 
 # Training parameters
 early_stopping_rounds: 20
