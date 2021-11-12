@@ -48,5 +48,9 @@ def str2model(model):
         from models.vime import VIME
         return VIME
 
+    elif model == "TabTransformer":
+        from models.tabtransformer import TabTransformer
+        return TabTransformer
+
     else:
         raise NotImplementedError("Model \"" + model + "\" not yet implemented")

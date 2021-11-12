@@ -18,8 +18,11 @@ class VIME(BaseModel):
         hidden_dim = 100
         self.batch_size = 128
 
-        self.model_self = VIMESelf(args.num_features)
-        self.model_semi = VIMESemi(args, args.num_features, hidden_dim, args.num_classes)
+        self.device = torch.device('cuda' if args.use_gpu and torch.cuda.is_available() else 'cpu')
+        print("On Device:", self.device)
+
+        self.model_self = VIMESelf(args.num_features).to(self.device)
+        self.model_semi = VIMESemi(args, args.num_features, hidden_dim, args.num_classes).to(self.device)
 
     def fit(self, X, y, X_val=None, y_val=None):
         X_unlab = np.concatenate([X, X_val], axis=0)
@@ -49,10 +52,10 @@ class VIME(BaseModel):
 
         for epoch in range(10):
             for batch_X, batch_mask, batch_feat in train_loader:
-                out_mask, out_feat = self.model_self(batch_X)
+                out_mask, out_feat = self.model_self(batch_X.to(self.device))
 
-                loss_mask = loss_func_mask(out_mask, batch_mask)
-                loss_feat = loss_func_feat(out_feat, batch_feat)
+                loss_mask = loss_func_mask(out_mask, batch_mask.to(self.device))
+                loss_feat = loss_func_feat(out_feat, batch_feat.to(self.device))
 
                 loss = loss_mask + loss_feat * alpha
 
@@ -92,7 +95,7 @@ class VIME(BaseModel):
         for epoch in range(1000):
             for i, (batch_X, batch_y, batch_unlab) in enumerate(train_loader):
 
-                batch_X_encoded = self.model_self.input_layer(batch_X)
+                batch_X_encoded = self.model_self.input_layer(batch_X.to(self.device))
                 y_hat = self.model_semi(batch_X_encoded)
 
                 yv_hats = torch.empty(K, self.batch_size, self.args.num_classes)
@@ -100,14 +103,14 @@ class VIME(BaseModel):
                     m_batch = mask_generator(p_m, batch_unlab)
                     _, batch_unlab_tmp = pretext_generator(m_batch, batch_unlab)
 
-                    batch_unlab_encoded = self.model_self.input_layer(batch_unlab_tmp.float())
+                    batch_unlab_encoded = self.model_self.input_layer(batch_unlab_tmp.float().to(self.device))
                     yv_hat = self.model_semi(batch_unlab_encoded)
                     yv_hats[rep] = yv_hat
 
                 if self.args.objective == "regression":
                     y_hat = y_hat.squeeze()
 
-                y_loss = loss_func_supervised(y_hat, batch_y)
+                y_loss = loss_func_supervised(y_hat, batch_y.to(self.device))
                 yu_loss = torch.mean(torch.var(yv_hats, dim=0))
                 loss = y_loss + beta * yu_loss
 
@@ -118,13 +121,13 @@ class VIME(BaseModel):
                 # Early Stopping
                 val_loss = 0.0
                 for val_i, (batch_val_X, batch_val_y) in enumerate(val_loader):
-                    batch_val_X_encoded = self.model_self.input_layer(batch_val_X)
+                    batch_val_X_encoded = self.model_self.input_layer(batch_val_X.to(self.device))
                     y_hat = self.model_semi(batch_val_X_encoded)
 
                     if self.args.objective == "regression":
                         y_hat = y_hat.squeeze()
 
-                    val_loss += loss_func_supervised(y_hat, batch_val_y)
+                    val_loss += loss_func_supervised(y_hat, batch_val_y.to(self.device))
 
                 val_loss /= val_dim
 
@@ -151,9 +154,9 @@ class VIME(BaseModel):
     def define_trial_parameters(cls, trial, args):
         params = {
             "p_m": trial.suggest_float("p_m", 0.1, 0.9),
-            "alpha": trial.suggest_float("alpha", 0.5, 3.0),
-            "K": trial.suggest_int("K", 2, 10),
-            "beta": trial.suggest_float("beta", 0.5, 3.0)
+            "alpha": trial.suggest_float("alpha", 0.1, 10),
+            "K": trial.suggest_categorical("K", [2, 3, 5, 10, 15, 20]),
+            "beta": trial.suggest_float("beta", 0.1, 10)
         }
         return params
 

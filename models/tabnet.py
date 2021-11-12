@@ -26,9 +26,6 @@ class TabNet(BaseModel):
         self.model.fit(X, y, eval_set=[(X_val, y_val)], eval_name=["eval"], eval_metric=metric,
                        max_epochs=self.args.epochs, patience=self.args.early_stopping_rounds, batch_size=128)
 
-    def predict(self, X):
-        return super().predict(X)
-
     @classmethod
     def define_trial_parameters(cls, trial, args):
         params = {
