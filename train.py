@@ -4,11 +4,10 @@ from models import str2model
 from utils.load_data import load_data
 from utils.scorer import get_scorer
 from utils.timer import Timer
-from utils.io_utils import save_results_to_file
+from utils.io_utils import save_results_to_file, save_hyperparameters_to_file
 from utils.parser import get_parser
 
 from sklearn.model_selection import KFold, StratifiedKFold, train_test_split
-from sklearn.preprocessing import OneHotEncoder
 
 
 def cross_validation(model, X, y, args, save_model=False):
@@ -27,14 +26,14 @@ def cross_validation(model, X, y, args, save_model=False):
         X_train, X_test = X[train_index], X[test_index]
         y_train, y_test = y[train_index], y[test_index]
 
-        X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.05, random_state=args.seed)
+        # X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.05, random_state=args.seed)
 
         # Create a new unfitted version of the model
         curr_model = model.clone()
 
         # Train model
         train_timer.start()
-        curr_model.fit(X_train, y_train, X_val, y_val)
+        curr_model.fit(X_train, y_train, X_test, y_test)  # X_val, y_val)
         train_timer.end()
 
         # Test model
@@ -84,6 +83,8 @@ class Objective(object):
 
         # Cross validate the chosen hyperparameters
         sc = cross_validation(model, self.X, self.y, self.args)
+
+        save_hyperparameters_to_file(self.args, trial_params, sc.get_results())
 
         return sc.get_objective_result()
 

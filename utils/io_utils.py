@@ -30,6 +30,18 @@ def save_results_to_file(args, results, train_time=None, test_time=None, best_pa
         text_file.write("\nBest Parameters: %s" % best_params)
 
 
+def save_hyperparameters_to_file(args, params, results):
+    filename = get_output_path(args, filename="hp_log", file_type="txt")
+
+    with open(filename, "a") as text_file:
+        text_file.write("Parameters: %s\n\n" % params)
+
+        for key, value in results.items():
+            text_file.write("%s: %.5f\n" % (key, value))
+
+        text_file.write("\n---------------------------------------\n")
+
+
 def get_output_path(args, filename, file_type, directory=None, extension=None):
     # For example: output/LinearModel/Covertype
     dir_path = output_dir + args.model_name + "/" + args.dataset
