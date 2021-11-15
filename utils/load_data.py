@@ -58,12 +58,16 @@ def load_data(args):
         args.num_classes = len(le.classes_)
 
     scale_idx = []
+    args.cat_dims = []
 
     # Preprocess data
     for i in range(args.num_features):
         if args.cat_idx and i in args.cat_idx:
             le = LabelEncoder()
             X[:, i] = le.fit_transform(X[:, i])
+
+            # Setting this?
+            args.cat_dims.append(len(le.classes_))
         elif args.scale:
             scale_idx.append(i)
 

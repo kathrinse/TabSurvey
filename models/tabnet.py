@@ -2,6 +2,8 @@ from pytorch_tabnet.tab_model import TabNetClassifier, TabNetRegressor
 
 from models.basemodel import BaseModel
 
+import numpy as np
+
 
 class TabNet(BaseModel):
 
@@ -15,23 +17,28 @@ class TabNet(BaseModel):
         self.tabnet_params = self.params.copy()
         del self.tabnet_params["batch_size"]
 
+        self.tabnet_params["cat_idxs"] = args.cat_idx
+        self.tabnet_params["cat_dims"] = args.cat_dims
+
         if args.objective == "regression":
             self.model = TabNetRegressor(**self.tabnet_params)
+            self.metric = ["rmse"]
         elif args.objective == "classification":
             self.model = TabNetClassifier(**self.tabnet_params)
+            self.metric = ["logloss"]
 
     def fit(self, X, y, X_val=None, y_val=None):
         if self.args.objective == "regression":
             y, y_val = y.reshape(-1, 1), y_val.reshape(-1, 1)
-            metric = ["rmse"]
-        elif self.args.objective == "classification":
-            metric = ["logloss"]
 
-        print("Batch size", self.params["batch_size"])
+        self.model.fit(X, y, eval_set=[(X_val, y_val)], eval_name=["eval"], eval_metric=self.metric,
+                       max_epochs=4, patience=self.args.early_stopping_rounds,
+                       batch_size=self.params["batch_size"])  # self.args.epochs
 
-        self.model.fit(X, y, eval_set=[(X_val, y_val)], eval_name=["eval"], eval_metric=metric,
-                       max_epochs=self.args.epochs, patience=self.args.early_stopping_rounds,
-                       batch_size=self.params["batch_size"])
+    def predict(self, X):
+        # For some reason this has to be set explicitly to work with categorical data
+        X = np.array(X, dtype=np.float)
+        return super().predict(X)
 
     @classmethod
     def define_trial_parameters(cls, trial, args):

@@ -2,8 +2,6 @@ import xgboost as xgb
 import catboost as cat
 import lightgbm as lgb
 
-import numpy as np
-
 from models.basemodel import BaseModel
 
 '''
@@ -78,6 +76,8 @@ class CatBoost(BaseModel):
             self.params["task_type"] = "GPU"
             self.params["devices"] = [0]
 
+        self.params["cat_features"] = args.cat_idx
+
         if args.objective == "regression":
             self.model = cat.CatBoostRegressor(**self.params)
         elif args.objective == "classification":
@@ -107,6 +107,8 @@ class LightGBM(BaseModel):
         super().__init__(params, args)
 
         self.params["verbosity"] = -1
+
+        self.params["categorical data"] = args.cat_idx
 
         if args.objective == "regression":
             self.params["objective"] = "regression"

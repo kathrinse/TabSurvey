@@ -53,6 +53,10 @@ class MLP(BaseModel, nn.Module):
     def fit(self, X, y, X_val=None, y_val=None):
         optimizer = optim.AdamW(self.parameters(), lr=self.params["learning_rate"])
 
+        # For some reason this has to be set explicitly to work with categorical data
+        X = np.array(X, dtype=np.float)
+        X_val = np.array(X_val, dtype=np.float)
+
         X = torch.tensor(X).float()
         X_val = torch.tensor(X_val).float()
 
@@ -120,6 +124,9 @@ class MLP(BaseModel, nn.Module):
 
         self.load_model(filename_extension="best", directory="tmp")
         self.eval()
+
+        # For some reason this has to be set explicitly to work with categorical data
+        X = np.array(X, dtype=np.float)
 
         X = torch.tensor(X).float()
         test_dataset = TensorDataset(X)

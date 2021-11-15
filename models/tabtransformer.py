@@ -5,25 +5,28 @@ from torch.utils.data import TensorDataset, DataLoader
 from models.basemodel import BaseModel
 from utils.io_utils import get_output_path
 
+import numpy as np
+
 
 class TabTransformer(BaseModel):
 
     def __init__(self, params, args):
         super().__init__(params, args)
 
-        num_continuous = args.num_features  # Todo: Adapt this for cat data!
-        categories_unique = ()  # Todo: Adapt this for cat data!
-
         if args.cat_idx:
             self.num_idx = list(set(range(args.num_features)) - set(args.cat_idx))
+            num_continuous = args.num_features - len(args.cat_idx)
+            categories_unique = args.cat_dims
         else:
             self.num_idx = list(range(args.num_features))
+            num_continuous = args.num_features
+            categories_unique = ()
 
         self.device = torch.device('cuda' if args.use_gpu and torch.cuda.is_available() else 'cpu')
         print("On Device:", self.device)
 
         self.model = TabTransformerModel(
-            categories=categories_unique,  # tuple containing the number of unique values within each category
+            categories=categories_unique,  # tuple (or list?) containing the number of unique values in each category
             num_continuous=num_continuous,  # number of continuous values
             dim=32,  # dimension, paper set at 32
             dim_out=args.num_classes,
@@ -37,6 +40,10 @@ class TabTransformer(BaseModel):
 
     def fit(self, X, y, X_val=None, y_val=None):
         optimizer = optim.AdamW(self.model.parameters(), lr=0.01)
+
+        # For some reason this has to be set explicitly to work with categorical data
+        X = np.array(X, dtype=np.float)
+        X_val = np.array(X_val, dtype=np.float)
 
         X = torch.tensor(X).float()
         X_val = torch.tensor(X_val).float()
@@ -66,9 +73,10 @@ class TabTransformer(BaseModel):
             for i, (batch_X, batch_y) in enumerate(train_loader):
 
                 if self.args.cat_idx:
-                    x_categ = batch_X[:, self.args.cat_idx].to(self.device)
+                    x_categ = batch_X[:, self.args.cat_idx].int().to(self.device)
                 else:
                     x_categ = None
+
                 x_cont = batch_X[:, self.num_idx].to(self.device)
 
                 out = self.model(x_categ, x_cont)
@@ -87,7 +95,7 @@ class TabTransformer(BaseModel):
                 for val_i, (batch_val_X, batch_val_y) in enumerate(val_loader):
 
                     if self.args.cat_idx:
-                        x_categ = batch_val_X[:, self.args.cat_idx].to(self.device)
+                        x_categ = batch_val_X[:, self.args.cat_idx].int().to(self.device)
                     else:
                         x_categ = None
 
@@ -107,28 +115,49 @@ class TabTransformer(BaseModel):
                     min_val_loss = val_loss
                     min_val_loss_idx = current_idx
 
+                    # Save the currently best model
+                    self.save_model(filename_extension="best", directory="tmp")
+
                 if min_val_loss_idx + self.args.early_stopping_rounds < current_idx:
                     # print("Validation loss has not improved for %d steps!" % self.args.early_stopping_rounds)
                     # print("Early stopping applies.")
                     return
 
     def predict(self, X):
+
+        self.load_model(filename_extension="best", directory="tmp")
+        self.model.eval()
+
+        # For some reason this has to be set explicitly to work with categorical data
+        X = np.array(X, dtype=np.float)
         X = torch.tensor(X).float()
 
-        if self.args.cat_idx:
-            x_categ = X[:, self.args.cat_idx].to(self.device)
-        else:
-            x_categ = None
+        test_dataset = TensorDataset(X)
+        test_loader = DataLoader(dataset=test_dataset, batch_size=128, shuffle=True, num_workers=2)
 
-        x_cont = X[:, self.num_idx].to(self.device)
-        self.predictions = self.model(x_categ, x_cont).detach().numpy()
+        self.predictions = []
 
+        with torch.no_grad():
+            for batch_X in test_loader:
+                x_categ = batch_X[0][:, self.args.cat_idx].int().to(self.device) if self.args.cat_idx else None
+                x_cont = batch_X[0][:, self.num_idx].to(self.device)
+
+                preds = self.model(x_categ, x_cont)
+                self.predictions.append(preds)
+
+        self.predictions = np.concatenate(self.predictions)
         return self.predictions
 
-    def save_model(self, filename_extension=""):
-        filename = get_output_path(self.args, directory="models", filename="m", extension=filename_extension,
+    def save_model(self, filename_extension="", directory="models"):
+        filename = get_output_path(self.args, directory=directory, filename="m", extension=filename_extension,
                                    file_type="pt")
         torch.save(self.model.state_dict(), filename)
+
+    def load_model(self, filename_extension="", directory="models"):
+        filename = get_output_path(self.args, directory=directory, filename="m", extension=filename_extension,
+                                   file_type="pt")
+        state_dict = torch.load(filename)
+        self.model.load_state_dict(state_dict)
 
     @classmethod
     def define_trial_parameters(cls, trial, args):

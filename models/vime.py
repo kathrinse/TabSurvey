@@ -25,11 +25,19 @@ class VIME(BaseModel):
         self.model_semi = VIMESemi(args, args.num_features, hidden_dim, args.num_classes).to(self.device)
 
     def fit(self, X, y, X_val=None, y_val=None):
+        # For some reason this has to be set explicitly to work with categorical data
+        X = np.array(X, dtype=np.float)
+        X_val = np.array(X_val, dtype=np.float)
+
         X_unlab = np.concatenate([X, X_val], axis=0)
+
         self.fit_self(X_unlab, p_m=self.params["p_m"], alpha=self.params["alpha"])
         self.fit_semi(X, y, X, X_val, y_val, p_m=self.params["p_m"], K=self.params["K"], beta=self.params["beta"])
 
     def predict(self, X):
+        # For some reason this has to be set explicitly to work with categorical data
+        X = np.array(X, dtype=np.float)
+
         X = torch.tensor(X).float()
         X_encoded = self.model_self.input_layer(X)
         y_hat = self.model_semi(X_encoded)
