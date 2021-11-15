@@ -7,7 +7,7 @@ from utils.timer import Timer
 from utils.io_utils import save_results_to_file, save_hyperparameters_to_file
 from utils.parser import get_parser
 
-from sklearn.model_selection import KFold, StratifiedKFold, train_test_split
+from sklearn.model_selection import KFold, StratifiedKFold  # , train_test_split
 
 
 def cross_validation(model, X, y, args, save_model=False):
@@ -18,7 +18,7 @@ def cross_validation(model, X, y, args, save_model=False):
 
     if args.objective == "regression":
         kf = KFold(n_splits=args.num_splits, shuffle=args.shuffle, random_state=args.seed)
-    elif args.objective == "classification":
+    elif args.objective == "classification" or args.objective == "binary_classification":
         kf = StratifiedKFold(n_splits=args.num_splits, shuffle=args.shuffle, random_state=args.seed)
 
     for i, (train_index, test_index) in enumerate(kf.split(X, y)):

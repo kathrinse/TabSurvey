@@ -8,11 +8,12 @@ def get_parser():
 
     # Put all parameters into config_california_housing.yml file!
     parser.add('-config', '--config', required=False, is_config_file_arg=True, help='config file path',
-               default="config/config_covertype.yml")  # config_kddcup99    config_california_housing
+               default="config/config_adult.yml")  #  config_covertype  config_california_housing config_kddcup99
 
     parser.add('--model_name', required=True, help="Name of the model that should be trained")
     parser.add('--dataset', required=True, help="Name of the dataset that will be used")
-    parser.add('--objective', type=str, default="regression", choices=["regression", "classification"],
+    parser.add('--objective', type=str, default="regression", choices=["regression", "classification",
+                                                                       "binary_classification"],
                help="Regression or Classification task")
 
     parser.add('--use_gpu', action="store_true", help="Set to true if GPU is available")
