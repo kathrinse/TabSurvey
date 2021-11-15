@@ -20,9 +20,9 @@ class LinearModel(BaseModel):
         super().__init__(params, args)
 
         if args.objective == "regression":
-            self.model = linear_model.LinearRegression(n_jobs=-1)
+            self.model = linear_model.LinearRegression(max_iter=args.epochs, n_jobs=-1)
         elif args.objective == "classification":
-            self.model = linear_model.LogisticRegression(multi_class="multinomial", n_jobs=-1)
+            self.model = linear_model.LogisticRegression(max_iter=args.epochs, multi_class="multinomial", n_jobs=-1)
 
     @classmethod
     def define_trial_parameters(cls, trial, args):

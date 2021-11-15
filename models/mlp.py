@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -25,7 +26,7 @@ class MLP(BaseModel, nn.Module):
         self.input_layer = nn.Linear(input_dim, hidden_dim)
 
         # Hidden Layers (number specified by n_layers)
-        self.layers.extend([nn.Linear(hidden_dim, hidden_dim) for _ in range(self.params["n_layers"]-1)])
+        self.layers.extend([nn.Linear(hidden_dim, hidden_dim) for _ in range(self.params["n_layers"] - 1)])
 
         # Output Layer
         self.output_layer = nn.Linear(hidden_dim, output_dim)
@@ -101,11 +102,14 @@ class MLP(BaseModel, nn.Module):
                     val_loss += loss_func(out, batch_val_y.to(self.device))
                 val_loss /= val_dim
 
-                current_idx = (i+1) * (epoch+1)
+                current_idx = (i + 1) * (epoch + 1)
 
                 if val_loss < min_val_loss:
                     min_val_loss = val_loss
                     min_val_loss_idx = current_idx
+
+                    # Save the currently best model
+                    self.save_model(filename_extension="best", directory="tmp")
 
                 if min_val_loss_idx + self.args.early_stopping_rounds < current_idx:
                     # print("Validation loss has not improved for %d steps!" % self.args.early_stopping_rounds)
@@ -113,14 +117,34 @@ class MLP(BaseModel, nn.Module):
                     return
 
     def predict(self, X):
-        X = torch.tensor(X).float().to(self.device)
-        self.predictions = self.forward(X).detach().numpy()
+
+        self.load_model(filename_extension="best", directory="tmp")
+        self.eval()
+
+        X = torch.tensor(X).float()
+        test_dataset = TensorDataset(X)
+        test_loader = DataLoader(dataset=test_dataset, batch_size=self.params["batch_size"], shuffle=True,
+                                 num_workers=2)
+
+        self.predictions = []
+        with torch.no_grad():
+            for batch_X in test_loader:
+                preds = self.forward(batch_X[0].to(self.device))
+                self.predictions.append(preds)
+
+        self.predictions = np.concatenate(self.predictions)
         return self.predictions
 
-    def save_model(self, filename_extension=""):
-        filename = get_output_path(self.args, directory="models", filename="m", extension=filename_extension,
+    def save_model(self, filename_extension="", directory="models"):
+        filename = get_output_path(self.args, directory=directory, filename="m", extension=filename_extension,
                                    file_type="pt")
         torch.save(self.state_dict(), filename)
+
+    def load_model(self, filename_extension="", directory="models"):
+        filename = get_output_path(self.args, directory=directory, filename="m", extension=filename_extension,
+                                   file_type="pt")
+        state_dict = torch.load(filename)
+        self.load_state_dict(state_dict)
 
     @classmethod
     def define_trial_parameters(cls, trial, args):
