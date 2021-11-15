@@ -11,12 +11,9 @@ class TabNet(BaseModel):
         # Paper recommends to be n_d and n_a the same
         self.params["n_a"] = self.params["n_d"]
 
-        # Delete batch size from params, as TabNet can not get it as input
+        # Delete batch size from params, as TabNet can not get it as an input
         self.tabnet_params = self.params.copy()
         del self.tabnet_params["batch_size"]
-
-        #self.batch_size = self.params["batch_size"]
-        #del self.params["batch_size"]
 
         if args.objective == "regression":
             self.model = TabNetRegressor(**self.tabnet_params)
