@@ -20,6 +20,8 @@ class TabNet(BaseModel):
         self.tabnet_params["cat_idxs"] = args.cat_idx
         self.tabnet_params["cat_dims"] = args.cat_dims
 
+        self.tabnet_params["device_name"] = "gpu" if args.use_gpu else 'cpu'
+
         if args.objective == "regression":
             self.model = TabNetRegressor(**self.tabnet_params)
             self.metric = ["rmse"]
@@ -32,8 +34,8 @@ class TabNet(BaseModel):
             y, y_val = y.reshape(-1, 1), y_val.reshape(-1, 1)
 
         self.model.fit(X, y, eval_set=[(X_val, y_val)], eval_name=["eval"], eval_metric=self.metric,
-                       max_epochs=4, patience=self.args.early_stopping_rounds,
-                       batch_size=self.params["batch_size"])  # self.args.epochs
+                       max_epochs=self.args.epochs, patience=self.args.early_stopping_rounds,
+                       batch_size=self.params["batch_size"])
 
     def predict(self, X):
         # For some reason this has to be set explicitly to work with categorical data
