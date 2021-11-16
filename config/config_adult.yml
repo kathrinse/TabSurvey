@@ -1,6 +1,6 @@
 # General parameters
 dataset: Adult
-model_name: SVM # LinearModel, KNN, SVM, DecisionTree, RandomForest, XGBoost, CatBoost, LightGBM, MLP, TabNet, VIME, TabTransformer
+model_name: TabTransformer # LinearModel, KNN, SVM, DecisionTree, RandomForest, XGBoost, CatBoost, LightGBM, MLP, TabNet, VIME, TabTransformer
 objective: binary_classification # Don't change
 
 # GPU parameters
@@ -26,6 +26,6 @@ epochs: 1000
 logging_period: 100
 
 # About the data
-num_classes: 2 # for classification
+num_classes: 1  # for classification
 num_features: 14
 cat_idx: [1,3,5,6,7,8,9,13]

@@ -66,9 +66,10 @@ def load_data(args):
         le = LabelEncoder()
         y = le.fit_transform(y)
 
-        # Setting this?
-        args.num_classes = len(le.classes_)
-        print("Having", args.num_classes, "classes as target.")
+        # Setting this if classification task
+        if args.objective == "classification":
+            args.num_classes = len(le.classes_)
+            print("Having", args.num_classes, "classes as target.")
 
     scale_idx = []
     args.cat_dims = []

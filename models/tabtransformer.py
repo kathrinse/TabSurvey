@@ -57,6 +57,10 @@ class TabTransformer(BaseModel):
             y_val = y_val.float()
         elif self.args.objective == "classification":
             loss_func = nn.CrossEntropyLoss()
+        elif self.args.objective == "binary_classification":
+            loss_func = nn.BCEWithLogitsLoss()
+            y = y.float()
+            y_val = y_val.float()
 
         train_dataset = TensorDataset(X, y)
         train_loader = DataLoader(dataset=train_dataset, batch_size=128, shuffle=True,
@@ -81,7 +85,7 @@ class TabTransformer(BaseModel):
 
                 out = self.model(x_categ, x_cont)
 
-                if self.args.objective == "regression":
+                if self.args.objective == "regression" or self.args.objective == "binary_classification":
                     out = out.squeeze()
 
                 loss = loss_func(out, batch_y.to(self.device))
@@ -103,7 +107,7 @@ class TabTransformer(BaseModel):
 
                     out = self.model(x_categ, x_cont)
 
-                    if self.args.objective == "regression":
+                    if self.args.objective == "regression" or self.args.objective == "binary_classification":
                         out = out.squeeze()
 
                     val_loss += loss_func(out, batch_val_y.to(self.device))
@@ -143,6 +147,10 @@ class TabTransformer(BaseModel):
                 x_cont = batch_X[0][:, self.num_idx].to(self.device)
 
                 preds = self.model(x_categ, x_cont)
+
+                if self.args.objective == "binary_classification":
+                    preds = torch.sigmoid(preds)
+
                 self.predictions.append(preds)
 
         self.predictions = np.concatenate(self.predictions)

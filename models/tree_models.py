@@ -32,6 +32,9 @@ class XGBoost(BaseModel):
             self.params["objective"] = "multi:softprob"
             self.params["num_class"] = args.num_classes
             self.params["eval_metric"] = "mlogloss"
+        elif args.objective == "binary_classification":
+            self.params["objective"] = "binary:logistic"
+            self.params["eval_metric"] = "auc"
 
     def fit(self, X, y, X_val=None, y_val=None):
         train = xgb.DMatrix(X, label=y)
@@ -44,6 +47,10 @@ class XGBoost(BaseModel):
     def predict(self, X):
         test = xgb.DMatrix(X)
         self.predictions = self.model.predict(test)
+
+        if self.args.objective == "binary_classification":
+            self.predictions = self.predictions.reshape(-1, 1)
+
         return self.predictions
 
     @classmethod
@@ -80,7 +87,7 @@ class CatBoost(BaseModel):
 
         if args.objective == "regression":
             self.model = cat.CatBoostRegressor(**self.params)
-        elif args.objective == "classification":
+        elif args.objective == "classification" or args.objective == "binary_classification":
             self.model = cat.CatBoostClassifier(**self.params)
 
     def fit(self, X, y, X_val=None, y_val=None):
@@ -108,8 +115,6 @@ class LightGBM(BaseModel):
 
         self.params["verbosity"] = -1
 
-        self.params["categorical data"] = args.cat_idx
-
         if args.objective == "regression":
             self.params["objective"] = "regression"
             self.params["metric"] = "mse"
@@ -117,17 +122,25 @@ class LightGBM(BaseModel):
             self.params["objective"] = "multiclass"
             self.params["num_class"] = args.num_classes
             self.params["metric"] = "multiclass"
+        elif args.objective == "binary_classification":
+            self.params["objective"] = "binary"
+            self.params["metric"] = "auc"
 
     def fit(self, X, y, X_val=None, y_val=None):
-        train = lgb.Dataset(X, label=y)
-        val = lgb.Dataset(X_val, label=y_val)
+        train = lgb.Dataset(X, label=y, categorical_feature=self.args.cat_idx)
+        val = lgb.Dataset(X_val, label=y_val, categorical_feature=self.args.cat_idx)
         self.model = lgb.train(self.params, train, num_boost_round=self.args.epochs, valid_sets=[val],
                                valid_names=["eval"], callbacks=[lgb.early_stopping(self.args.early_stopping_rounds),
-                                                                lgb.log_evaluation(self.args.logging_period)])
+                                                                lgb.log_evaluation(self.args.logging_period)],
+                               categorical_feature=self.args.cat_idx)
 
     def predict(self, X):
         # Predicts probabilities if the task is classification
         self.predictions = self.model.predict(X)
+
+        if self.args.objective == "binary_classification":
+            self.predictions = self.predictions.reshape(-1, 1)
+
         return self.predictions
 
     @classmethod

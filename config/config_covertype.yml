@@ -1,6 +1,6 @@
 # General parameters
 dataset: Covertype
-model_name: LinearModel # LinearModel, KNN, SVM, DecisionTree, RandomForest, XGBoost, CatBoost, LightGBM, ModelTree, TabNet, VIME
+model_name: TabTransformer # LinearModel, KNN, SVM, DecisionTree, RandomForest, XGBoost, CatBoost, LightGBM, ModelTree, TabNet, VIME
 objective: classification # Don't change
 
 # GPU parameters

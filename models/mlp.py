@@ -18,7 +18,7 @@ class MLP(BaseModel, nn.Module):
 
         input_dim = self.args.num_features
         hidden_dim = self.params["hidden_dim"]
-        output_dim = self.args.num_classes  # 1 for regression, 2 for binary?
+        output_dim = self.args.num_classes  # 1 for regression and for binary
 
         self.layers = nn.ModuleList()
 
@@ -69,6 +69,10 @@ class MLP(BaseModel, nn.Module):
             y_val = y_val.float()
         elif self.args.objective == "classification":
             loss_func = nn.CrossEntropyLoss()
+        elif self.args.objective == "binary_classification":
+            loss_func = nn.BCEWithLogitsLoss()
+            y = y.float()
+            y_val = y_val.float()
 
         train_dataset = TensorDataset(X, y)
         train_loader = DataLoader(dataset=train_dataset, batch_size=self.params["batch_size"], shuffle=True,
@@ -86,8 +90,12 @@ class MLP(BaseModel, nn.Module):
 
                 out = self.forward(batch_X.to(self.device))
 
-                if self.args.objective == "regression":
+                if self.args.objective == "regression" or self.args.objective == "binary_classification":
                     out = out.squeeze()
+
+                zeros = np.where(out == 0)
+                if len(zeros[0]):
+                    print(zeros)
 
                 loss = loss_func(out, batch_y.to(self.device))
 
@@ -100,8 +108,12 @@ class MLP(BaseModel, nn.Module):
                 for val_i, (batch_val_X, batch_val_y) in enumerate(val_loader):
                     out = self.forward(batch_val_X.to(self.device))
 
-                    if self.args.objective == "regression":
+                    if self.args.objective == "regression" or self.args.objective == "binary_classification":
                         out = out.squeeze()
+
+                    zeros = np.where(out == 0)
+                    if len(zeros[0]):
+                        print(zeros)
 
                     val_loss += loss_func(out, batch_val_y.to(self.device))
                 val_loss /= val_dim
@@ -136,7 +148,7 @@ class MLP(BaseModel, nn.Module):
         self.predictions = []
         with torch.no_grad():
             for batch_X in test_loader:
-                preds = self.forward(batch_X[0].to(self.device))
+                preds = torch.sigmoid(self.forward(batch_X[0].to(self.device)))
                 self.predictions.append(preds)
 
         self.predictions = np.concatenate(self.predictions)

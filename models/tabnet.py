@@ -20,12 +20,12 @@ class TabNet(BaseModel):
         self.tabnet_params["cat_idxs"] = args.cat_idx
         self.tabnet_params["cat_dims"] = args.cat_dims
 
-        self.tabnet_params["device_name"] = "gpu" if args.use_gpu else 'cpu'
+        self.tabnet_params["device_name"] = "cuda" if args.use_gpu else 'cpu'
 
         if args.objective == "regression":
             self.model = TabNetRegressor(**self.tabnet_params)
             self.metric = ["rmse"]
-        elif args.objective == "classification":
+        elif args.objective == "classification" or args.objective == "binary_classification":
             self.model = TabNetClassifier(**self.tabnet_params)
             self.metric = ["logloss"]
 

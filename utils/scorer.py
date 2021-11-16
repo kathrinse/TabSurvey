@@ -120,13 +120,23 @@ class BinScorer(Scorer):
     '''
         y_true: (n_samples,)
         y_pred: (n_samples, 2) - probabilities of the classes (summing to 1)
+        or
+        y_pred: (n_samples, 1) - probabilities of the true class
     '''
     def eval(self, y_true, y_pred):
         logloss = log_loss(y_true, y_pred)
-        auc = roc_auc_score(y_true, y_pred[:, 1])
 
-        # Accuracy and F1 score need the final label predictions
-        pred_label = np.argmax(y_pred, axis=1)
+        if y_pred.shape[1] == 1:
+            auc = roc_auc_score(y_true, y_pred)
+
+            # Accuracy and F1 score need the final label predictions
+            pred_label = [1 if i > 0.5 else 0 for i in y_pred]
+        else:
+            auc = roc_auc_score(y_true, y_pred[:, 1])
+
+            # Accuracy and F1 score need the final label predictions
+            pred_label = np.argmax(y_pred, axis=1)
+
         acc = accuracy_score(y_true, pred_label)
         f1 = f1_score(y_true, pred_label, average="micro")  # use here macro or weighted?
 
