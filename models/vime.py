@@ -35,13 +35,26 @@ class VIME(BaseModel):
         self.fit_semi(X, y, X, X_val, y_val, p_m=self.params["p_m"], K=self.params["K"], beta=self.params["beta"])
 
     def predict(self, X):
+        self.load_model(filename_extension="best", directory="tmp")
+        self.model_self.eval()
+        self.model_semi.eval()
+
         # For some reason this has to be set explicitly to work with categorical data
         X = np.array(X, dtype=np.float)
-
         X = torch.tensor(X).float()
-        X_encoded = self.model_self.input_layer(X)
-        y_hat = self.model_semi(X_encoded)
-        self.predictions = y_hat.detach().numpy()
+
+        test_dataset = TensorDataset(X)
+        test_loader = DataLoader(dataset=test_dataset, batch_size=128, shuffle=True, num_workers=2)
+
+        self.predictions = []
+
+        with torch.no_grad():
+            for batch_X in test_loader:
+                X_encoded = self.model_self.input_layer(batch_X[0].to(self.device))
+                preds = self.model_semi(X_encoded)
+                self.predictions.append(preds)
+
+        self.predictions = np.concatenate(self.predictions)
         return self.predictions
 
     def fit_self(self, X, p_m=0.3, alpha=2):
@@ -145,18 +158,31 @@ class VIME(BaseModel):
                     min_val_loss = val_loss
                     min_val_loss_idx = current_idx
 
+                    self.save_model(filename_extension="best", directory="tmp")
+
                 if min_val_loss_idx + self.args.early_stopping_rounds < current_idx:
                     print("Early stopping applies.", i)
                     return
 
-    def save_model(self, filename_extension=""):
-        filename_self = get_output_path(self.args, directory="models", filename="m_self", extension=filename_extension,
+    def save_model(self, filename_extension="", directory="models"):
+        filename_self = get_output_path(self.args, directory=directory, filename="m_self", extension=filename_extension,
                                         file_type="pt")
         torch.save(self.model_self.state_dict(), filename_self)
 
-        filename_semi = get_output_path(self.args, directory="models", filename="m_semi", extension=filename_extension,
+        filename_semi = get_output_path(self.args, directory=directory, filename="m_semi", extension=filename_extension,
                                         file_type="pt")
         torch.save(self.model_semi.state_dict(), filename_semi)
+
+    def load_model(self, filename_extension="", directory="models"):
+        filename_self = get_output_path(self.args, directory=directory, filename="m_self", extension=filename_extension,
+                                        file_type="pt")
+        state_dict = torch.load(filename_self)
+        self.model_self.load_state_dict(state_dict)
+
+        filename_semi = get_output_path(self.args, directory=directory, filename="m_semi", extension=filename_extension,
+                                        file_type="pt")
+        state_dict = torch.load(filename_semi)
+        self.model_semi.load_state_dict(state_dict)
 
     @classmethod
     def define_trial_parameters(cls, trial, args):
