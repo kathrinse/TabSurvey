@@ -15,14 +15,13 @@ class VIME(BaseModel):
     def __init__(self, params, args):
         super().__init__(params, args)
 
-        hidden_dim = 100
         self.batch_size = 128
 
         self.device = torch.device('cuda' if args.use_gpu and torch.cuda.is_available() else 'cpu')
         print("On Device:", self.device)
 
         self.model_self = VIMESelf(args.num_features).to(self.device)
-        self.model_semi = VIMESemi(args, args.num_features, hidden_dim, args.num_classes).to(self.device)
+        self.model_semi = VIMESemi(args, args.num_features, args.num_classes).to(self.device)
 
     def fit(self, X, y, X_val=None, y_val=None):
         # For some reason this has to be set explicitly to work with categorical data
@@ -220,17 +219,23 @@ class VIMESelf(nn.Module):
 
 class VIMESemi(nn.Module):
 
-    def __init__(self, args, input_dim, hidden_dim, output_dim):
+    def __init__(self, args, input_dim, output_dim, hidden_dim=100, n_layers=5):
         super().__init__()
         self.args = args
 
         self.input_layer = nn.Linear(input_dim, hidden_dim)
-        self.hidden_layer = nn.Linear(hidden_dim, hidden_dim)
+
+        self.layers = nn.ModuleList()
+        self.layers.extend([nn.Linear(hidden_dim, hidden_dim) for _ in range(n_layers - 1)])
+
         self.output_layer = nn.Linear(hidden_dim, output_dim)
 
     def forward(self, x):
         x = F.relu(self.input_layer(x))
-        x = F.relu(self.hidden_layer(x))
+
+        for layer in self.layers:
+            x = F.relu(layer(x))
+
         out = self.output_layer(x)
 
         if self.args.objective == "classification":

@@ -93,10 +93,6 @@ class MLP(BaseModel, nn.Module):
                 if self.args.objective == "regression" or self.args.objective == "binary_classification":
                     out = out.squeeze()
 
-                zeros = np.where(out == 0)
-                if len(zeros[0]):
-                    print(zeros)
-
                 loss = loss_func(out, batch_y.to(self.device))
 
                 optimizer.zero_grad()
@@ -110,10 +106,6 @@ class MLP(BaseModel, nn.Module):
 
                     if self.args.objective == "regression" or self.args.objective == "binary_classification":
                         out = out.squeeze()
-
-                    zeros = np.where(out == 0)
-                    if len(zeros[0]):
-                        print(zeros)
 
                     val_loss += loss_func(out, batch_val_y.to(self.device))
                 val_loss /= val_dim
@@ -149,7 +141,7 @@ class MLP(BaseModel, nn.Module):
         with torch.no_grad():
             for batch_X in test_loader:
                 preds = torch.sigmoid(self.forward(batch_X[0].to(self.device)))
-                self.predictions.append(preds)
+                self.predictions.append(preds.detach().cpu().numpy())
 
         self.predictions = np.concatenate(self.predictions)
         return self.predictions
