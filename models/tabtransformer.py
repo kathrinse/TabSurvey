@@ -28,14 +28,9 @@ class TabTransformer(BaseModel):
         self.model = TabTransformerModel(
             categories=categories_unique,  # tuple (or list?) containing the number of unique values in each category
             num_continuous=num_continuous,  # number of continuous values
-            dim=32,  # dimension, paper set at 32
             dim_out=args.num_classes,
-            depth=6,  # depth, paper recommended 6
-            heads=8,  # heads, paper recommends 8
-            attn_dropout=0.1,  # post-attention dropout
-            ff_dropout=0.1,  # feed forward dropout
-            mlp_hidden_mults=(4, 2),  # relative multiples of each hidden dimension of the last mlp to logits
             mlp_act=nn.ReLU(),  # activation for final mlp, defaults to relu, but could be anything else (selu etc)
+            **self.params
         ).to(self.device)
 
     def fit(self, X, y, X_val=None, y_val=None):
@@ -63,11 +58,11 @@ class TabTransformer(BaseModel):
             y_val = y_val.float()
 
         train_dataset = TensorDataset(X, y)
-        train_loader = DataLoader(dataset=train_dataset, batch_size=128, shuffle=True,
+        train_loader = DataLoader(dataset=train_dataset, batch_size=64, shuffle=True,
                                   num_workers=2)
 
         val_dataset = TensorDataset(X_val, y_val)
-        val_loader = DataLoader(dataset=val_dataset, batch_size=128, shuffle=True)
+        val_loader = DataLoader(dataset=val_dataset, batch_size=64, shuffle=True)
 
         val_dim = y_val.shape[0]
         min_val_loss = float("inf")
@@ -137,7 +132,7 @@ class TabTransformer(BaseModel):
         X = torch.tensor(X).float()
 
         test_dataset = TensorDataset(X)
-        test_loader = DataLoader(dataset=test_dataset, batch_size=128, shuffle=True, num_workers=2)
+        test_loader = DataLoader(dataset=test_dataset, batch_size=64, shuffle=True, num_workers=2)
 
         self.predictions = []
 
@@ -169,7 +164,16 @@ class TabTransformer(BaseModel):
 
     @classmethod
     def define_trial_parameters(cls, trial, args):
-        return dict()
+        params = {
+            "dim": trial.suggest_int("dim", 8, 64),  # dimension, paper set at 32
+            "depth": trial.suggest_int("depth", 3, 8),  # depth, paper recommended 6
+            "heads": trial.suggest_int("heads", 3, 8),  # heads, paper recommends 8
+            "attn_dropout": trial.suggest_float("attn_dropout", 0.05, 0.3),  # post-attention dropout
+            "ff_dropout": trial.suggest_float("ff_dropout", 0.05, 0.3),  # feed forward dropout
+            "mlp_hidden_mults": trial.suggest_categorical("mlp_hidden_mults", [(4, 2), (2, 1), (8, 4)])
+            # relative multiples of each hidden dimension of the last mlp to logits
+        }
+        return params
 
 
 ####################################################################################################################
