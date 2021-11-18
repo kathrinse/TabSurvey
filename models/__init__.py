@@ -52,5 +52,9 @@ def str2model(model):
         from models.tabtransformer import TabTransformer
         return TabTransformer
 
+    elif model == "NODE":
+        from models.node import NODE
+        return NODE
+
     else:
         raise NotImplementedError("Model \"" + model + "\" not yet implemented")
