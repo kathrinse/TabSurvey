@@ -53,6 +53,9 @@ def load_data(args):
         columns = features + [label]
         df = pd.read_csv(url_data, names=columns)
 
+        # Fill NaN with something better?
+        df.fillna(0, inplace=True)
+
         X = df[features].to_numpy()
         y = df[label].to_numpy()
     else:

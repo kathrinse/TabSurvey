@@ -81,7 +81,7 @@ class NODE(BaseModel):
         best_step_loss = 0
 
         for batch in node_lib.iterate_minibatches(data.X_train, data.y_train, batch_size=64, shuffle=True,
-                                                  epochs=1):  # self.args.epochs
+                                                  epochs=self.args.epochs):
 
             metrics = self.trainer.train_on_batch(*batch, device=self.device)
 
@@ -114,8 +114,6 @@ class NODE(BaseModel):
                     print("Best step: ", best_step_loss)
                     print("Best Val Loss: %0.5f" % best_loss)
                     break
-
-        print("End of epoch 1.")
 
     def predict(self, X):
         self.trainer.load_checkpoint(tag="best")

@@ -56,5 +56,9 @@ def str2model(model):
         from models.node import NODE
         return NODE
 
+    elif model == "DeepGBM":
+        from models.deepgbm import DeepGBM
+        return DeepGBM
+
     else:
         raise NotImplementedError("Model \"" + model + "\" not yet implemented")
