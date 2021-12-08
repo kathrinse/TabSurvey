@@ -146,7 +146,7 @@ class TabTransformer(BaseModel):
                 if self.args.objective == "binary_classification":
                     preds = torch.sigmoid(preds)
 
-                self.predictions.append(preds)
+                self.predictions.append(preds.cpu())
 
         self.predictions = np.concatenate(self.predictions)
         return self.predictions

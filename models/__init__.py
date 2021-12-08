@@ -60,5 +60,9 @@ def str2model(model):
         from models.deepgbm import DeepGBM
         return DeepGBM
 
+    elif model == "RLN":
+        from models.rln import RLN
+        return RLN
+
     else:
         raise NotImplementedError("Model \"" + model + "\" not yet implemented")
