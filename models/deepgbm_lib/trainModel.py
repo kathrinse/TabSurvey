@@ -20,6 +20,8 @@ from models.deepgbm_lib.utils.helper import AdamW, eval_metrics, printMetric
 
 model_path = "deepgbm.pt"
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 
 def trainModel(model, train_x, train_y, tree_outputs, test_x, test_y, optimizer,
                train_x_cat=None, test_x_cat=None, epochs=20, early_stopping_rounds=5, save_model=False):
@@ -35,8 +37,8 @@ def trainModel(model, train_x, train_y, tree_outputs, test_x, test_y, optimizer,
     else:
         trainset = TensorDataset(train_x, train_y, tree_outputs)
 
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=config.config['batch_size'], shuffle=True,
-                                              num_workers=2)
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=config.config['batch_size'])
+    # , shuffle=True, num_workers=2
 
     min_test_loss = float("inf")
     min_test_loss_idx = 0
@@ -75,7 +77,7 @@ def trainModel(model, train_x, train_y, tree_outputs, test_x, test_y, optimizer,
             loss_val.backward()
 
             # Compute loss for documentation
-            loss = model.true_loss(outputs[0], target)
+            loss = model.true_loss(outputs[0], target.float())
 
             # optimize the parameters
             optimizer.step()
@@ -120,7 +122,6 @@ def trainModel(model, train_x, train_y, tree_outputs, test_x, test_y, optimizer,
 
 
 def evaluateModel(model, test_x, test_y, test_x_cat=None):
-
     test_x = torch.tensor(test_x)
     test_y = torch.tensor(test_y)
 
@@ -153,10 +154,10 @@ def evaluateModel(model, test_x, test_y, test_x_cat=None):
             else:
                 outputs = model(inputs)[0]
 
-            y_preds.append(outputs)
+            y_preds.append(outputs.cpu())
 
             # Compute loss
-            loss = model.true_loss(outputs, target.float())
+            loss = model.true_loss(outputs, target.float()).cpu()
             sum_loss += loss * target.shape[0]
 
     return sum_loss / test_x.shape[0], np.concatenate(y_preds)
@@ -172,10 +173,8 @@ def evaluateModel(model, test_x, test_y, test_x_cat=None):
 
 
 def makePredictions(model, test_x, test_cat):
-    testset = np.concatenate([test_x, test_cat], axis=-1)
+    testset = TensorDataset(torch.tensor(test_x), torch.tensor(test_cat))
     testloader = torch.utils.data.DataLoader(testset, batch_size=config.config['test_batch_size'])
-
-    feature_dim = test_x.shape[1]
 
     # Put model in evaluation mode
     model.eval()
@@ -184,11 +183,9 @@ def makePredictions(model, test_x, test_cat):
 
     with torch.no_grad():
         for data in testloader:
-            # Get data and target from dataloader
-            inputs = data[:, :feature_dim]
-            inputs_cat = data[:, feature_dim:]
+            inputs, inputs_cat = data
 
             outputs = model(inputs, inputs_cat)[0]
-            y_preds.append(outputs)
+            y_preds.append(outputs.cpu())
 
     return np.concatenate(y_preds, axis=0)

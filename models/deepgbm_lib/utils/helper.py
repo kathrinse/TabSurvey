@@ -59,7 +59,8 @@ class AdamW(torch.optim.Adam):
     
     
 def outputFromEmbeddingModel(emb_model, leaf_preds, label_size, n_models):
-    trainloader = torch.utils.data.DataLoader(leaf_preds, batch_size=config.config['batch_size'], shuffle=True, num_workers=2)
+    trainloader = torch.utils.data.DataLoader(leaf_preds, batch_size=config.config['batch_size'])
+    #, shuffle=True, num_workers=2
 
     emb_model.eval()
     y_preds = []

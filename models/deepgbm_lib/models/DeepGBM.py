@@ -42,8 +42,6 @@ class DeepGBM(torch.nn.Module):
             self.criterion = nn.BCELoss()
         elif self.task == 'classification':
             print("Classification not yet implemented")
-            import sys
-            sys.exit(0)
             # TODO Implement classification
 
     def forward(self, Xg, Xd):

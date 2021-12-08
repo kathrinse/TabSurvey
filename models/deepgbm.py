@@ -14,6 +14,11 @@ class DeepGBM(BaseModel):
     def __init__(self, params, args):
         super().__init__(params, args)
 
+        if args.objective == "classification":
+            print("DeepGBM not implemented for classification!")
+            import sys
+            sys.exit()
+
         if args.cat_idx:
             cat_col = args.cat_idx
             num_col = list(set(range(args.num_features)) - set(args.cat_idx))
