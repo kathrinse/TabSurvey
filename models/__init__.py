@@ -64,5 +64,9 @@ def str2model(model):
         from models.rln import RLN
         return RLN
 
+    elif model == "DNFNet":
+        from models.dnf import DNFNet
+        return DNFNet
+
     else:
         raise NotImplementedError("Model \"" + model + "\" not yet implemented")
