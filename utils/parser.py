@@ -6,15 +6,14 @@ def get_parser():
     parser = configargparse.ArgumentParser(config_file_parser_class=configargparse.YAMLConfigFileParser,
                                            formatter_class=configargparse.ArgumentDefaultsHelpFormatter)
 
-    # Put all parameters into config_california_housing.yml file!
     parser.add('-config', '--config', required=False, is_config_file_arg=True, help='config file path',
-               default="config/config_adult.yml")  #  config_covertype  config_california_housing config_kddcup99
+               default="config/config_california_housing.yml")  # config_kddcup99     config_covertype   config_adult
 
     parser.add('--model_name', required=True, help="Name of the model that should be trained")
     parser.add('--dataset', required=True, help="Name of the dataset that will be used")
     parser.add('--objective', type=str, default="regression", choices=["regression", "classification",
                                                                        "binary_classification"],
-               help="Regression or Classification task")
+               help="Set the type of the task")
 
     parser.add('--use_gpu', action="store_true", help="Set to true if GPU is available")
     parser.add('--gpu_id', type=int, help="")

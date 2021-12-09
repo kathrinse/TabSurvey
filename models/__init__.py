@@ -68,5 +68,9 @@ def str2model(model):
         from models.dnf import DNFNet
         return DNFNet
 
+    elif model == "STG":
+        from models.stochastic_gates import STG
+        return STG
+
     else:
         raise NotImplementedError("Model \"" + model + "\" not yet implemented")
