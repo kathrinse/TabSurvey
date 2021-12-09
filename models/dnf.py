@@ -94,16 +94,22 @@ class DNFNet(BaseModel):
             saver = tf.train.Saver(tf.global_variables())
             saver.restore(self.model_handler.sess, self.weights_dir + '/model_weights.ckpt')
 
-        # create dummy target for Generator to work
-        y = np.zeros(X.shape[0])
+        # create sorted target array for Generator to work and to sort the predictions afterwards
+        y = np.array(list(range(X.shape[0])))
+        if self.args.objective == "classification":
+            r = np.zeros((X.shape[0], self.args.num_classes - 1))
+            y = np.concatenate([y.reshape(-1, 1), r], axis=1)
 
         test_generator = NumpyGenerator(X, y, self.config['output_dim'], self.config['batch_size'],
-                                        translate_label_to_one_hot=self.config['translate_label_to_one_hot'],
+                                        translate_label_to_one_hot=False, #self.config['translate_label_to_one_hot']
                                         copy_dataset=False)
 
-        _, y_pred = self.model_handler.test(test_generator)
+        y, y_pred = self.model_handler.test(test_generator)
 
-        self.predictions = y_pred
+        # Sort the predictions!
+        y_pred_sorted = [y_pred for _, y_pred in sorted(zip(y[:, 0], y_pred))]
+
+        self.predictions = np.concatenate(y_pred_sorted, axis=0).reshape(-1, self.args.num_classes)
         return self.predictions
 
     def save_model(self, filename_extension="", directory="models"):
@@ -112,7 +118,11 @@ class DNFNet(BaseModel):
 
         # Model already saved, only coping to the right location
         import shutil
-        shutil.copytree(self.weights_dir, filename, dirs_exist_ok=True)
+
+        if os.path.exists(filename):
+            shutil.rmtree(filename)
+
+        shutil.copytree(self.weights_dir, filename)  # , dirs_exist_ok=True
 
     @classmethod
     def define_trial_parameters(cls, trial, args):
