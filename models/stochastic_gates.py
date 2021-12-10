@@ -20,9 +20,9 @@ class STG(BaseModel):
         out_dim = 2 if self.args.objective == "binary_classification" else self.args.num_classes
 
         self.model = STGModel(task_type=task, input_dim=self.args.num_features,
-                              output_dim=out_dim, hidden_dims=[500, 50, 10], activation='tanh',
-                              optimizer='SGD', batch_size=128, feature_selection=True, random_state=1, device=device,
-                              **self.params)
+                              output_dim=out_dim, activation='tanh', sigma=0.5,
+                              optimizer='SGD',  feature_selection=True, random_state=1, device=device,
+                              **self.params)  # batch_size=128, hidden_dims=[500, 50, 10],
 
     def fit(self, X, y, X_val=None, y_val=None):
         X, X_val = X.astype("float"), X_val.astype("float")
@@ -54,9 +54,13 @@ class STG(BaseModel):
     @classmethod
     def define_trial_parameters(cls, trial, args):
         params = {
-            "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.1),
-            "sigma": trial.suggest_float("sigma", 0.3, 0.5),
-            "lam": trial.suggest_float("lam", 0.1, 0.1)
+            "learning_rate": trial.suggest_float("learning_rate", 1e-4, 1e-1, log=True),
+            "lam": trial.suggest_float("lam", 1e-3, 10, log=True),
+            "hidden_dims": trial.suggest_categorical("hidden_dims", [[500, 50, 10], [60, 20],
+                                                                     [500, 500, 10], [500, 400, 20]]),
+            "batch_size": trial.suggest_categorical("batch_size", [64, 125, 256, 512, 1024])
+
+            # Change also the number and size of the hidden_dims?!
         }
 
         print(params)

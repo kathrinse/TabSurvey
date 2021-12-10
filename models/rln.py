@@ -19,23 +19,13 @@ class RLN(BaseModel):
         super().__init__(params, args)
 
         lr = np.power(10, self.params["log_lr"])
-        build_fn = self.RLN_Model(layers=self.params["layers"], norm=1,
+        build_fn = self.RLN_Model(layers=self.params["layers"], norm=self.params["norm"],
                                   avg_reg=self.params["theta"], learning_rate=lr)
 
         if args.objective == "regression":
-            self.model = KerasRegressor(build_fn=build_fn, epochs=20, batch_size=256, verbose=1)
+            self.model = KerasRegressor(build_fn=build_fn, epochs=20, batch_size=self.params["batch_size"], verbose=1)
         else:
-            self.model = KerasClassifier(build_fn=build_fn, epochs=20, batch_size=256, verbose=1)
-
-    def predict(self, X):
-        print(X.shape)
-        preds = super().predict(X)
-        if np.isnan(preds).any():
-            #print(X)
-            print("NaN?", np.isnan(X).any())
-            print(np.isnan(preds).all())
-
-        return preds
+            self.model = KerasClassifier(build_fn=build_fn, epochs=20, batch_size=self.params["batch_size"], verbose=1)
 
     def save_model(self, filename_extension="", directory="models"):
         filename = get_output_path(self.args, directory=directory, filename="m", extension=filename_extension,
@@ -48,6 +38,8 @@ class RLN(BaseModel):
             "layers": trial.suggest_int("layers", 2, 8),
             "theta": trial.suggest_int("theta", -12, -8),
             "log_lr": trial.suggest_int("log_lr", 5, 7),
+            "norm": trial.suggest_categorical("norm", [1, 2]),
+            "batch_size": trial.suggest_categorical("batch_size", [64, 125, 256, 512, 1024])
         }
         return params
 
@@ -79,7 +71,7 @@ class RLN(BaseModel):
 
         return build_fn
 
-    def base_model(self, layers=4, l1=0.01): # I changed this for the loss getting nan anymore
+    def base_model(self, layers=4, l1=0.01):
         assert layers > 1
 
         INPUT_DIM = self.args.num_features
@@ -106,7 +98,7 @@ class RLN(BaseModel):
                 model.add(Dense(width, input_dim=prev_width, kernel_initializer='glorot_normal', activation='relu',
                                 kernel_regularizer=regularizers.l1(inner_l1)))
                 # For efficiency we only regularized the first layer
-                #inner_l1 = 0
+                inner_l1 = 0
                 prev_width = width
 
             model.add(Dense(OUTPUT_DIM, kernel_initializer='glorot_normal', activation=act_fn))

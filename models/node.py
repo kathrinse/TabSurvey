@@ -8,6 +8,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+from qhoptim.pyt import QHAdam
 
 import numpy as np
 
@@ -21,13 +22,16 @@ class NODE(BaseModel):
 
         self.device = torch.device('cuda' if args.use_gpu and torch.cuda.is_available() else 'cpu')
 
+        layer_dim = int(self.params["total_tree_count"] / self.params["num_layers"])
+
         if args.objective == "regression":
             self.model = nn.Sequential(
                 node_lib.DenseBlock(args.num_features,
-                                    # layer_dim=128, num_layers=8, depth=6,
-                                    tree_dim=3, flatten_output=False,
-                                    choice_function=node_lib.entmax15, bin_function=node_lib.entmoid15,
-                                    **self.params),
+                                    # layer_dim=128, num_layers=8, depth=6, tree_dim=3
+                                    layer_dim=layer_dim, num_layers=self.params["num_layers"],
+                                    depth=self.params["tree_depth"], tree_dim=self.params["tree_output_dim"],
+                                    flatten_output=False,
+                                    choice_function=node_lib.entmax15, bin_function=node_lib.entmoid15),
                 node_lib.Lambda(lambda x: x[..., 0].mean(dim=-1)),  # average first channels of every tree
             ).to(self.device)
 
@@ -35,9 +39,10 @@ class NODE(BaseModel):
             self.model = nn.Sequential(
                 node_lib.DenseBlock(args.num_features,
                                     # layer_dim=1024, num_layers=2, depth=6,
-                                    tree_dim=args.num_classes + 1, flatten_output=False,
-                                    choice_function=node_lib.entmax15, bin_function=node_lib.entmoid15,
-                                    **self.params),
+                                    layer_dim=layer_dim, num_layers=self.params["num_layers"],
+                                    depth=self.params["tree_depth"], tree_dim=args.num_classes + 1,
+                                    flatten_output=False,
+                                    choice_function=node_lib.entmax15, bin_function=node_lib.entmoid15),
                 node_lib.Lambda(lambda x: x[..., :args.num_classes].mean(dim=-2)),
             ).to(self.device)
 
@@ -52,9 +57,7 @@ class NODE(BaseModel):
 
         with torch.no_grad():
             # trigger data-aware initialisation
-            res = self.model(torch.as_tensor(data.X_train[:5000], device=self.device))
-
-        optimizer_params = {'betas': (0.95, 0.998)}
+            res = self.model(torch.as_tensor(data.X_train[:1000], device=self.device))
 
         experiment_name = '{}_{}.{:0>2d}.{:0>2d}_{:0>2d}:{:0>2d}:{:0>2d}'.format(self.args.dataset, *time.gmtime()[:6])
 
@@ -71,8 +74,8 @@ class NODE(BaseModel):
             model=self.model, loss_function=loss_func,
             experiment_name=experiment_name,
             warm_start=False,
-            Optimizer=optim.AdamW,
-            optimizer_params=optimizer_params,
+            Optimizer=QHAdam,
+            optimizer_params=dict(lr=1e-3, nus=(0.7, 1.0), betas=(0.95, 0.998)),
             verbose=True,
             n_last_checkpoints=5
         )
@@ -95,7 +98,8 @@ class NODE(BaseModel):
                 elif self.args.objective == "classification":
                     loss = self.trainer.evaluate_logloss(data.X_valid, data.y_valid, device=self.device, batch_size=128)
                 elif self.args.objective == "binary_classification":
-                    loss = self.trainer.evaluate_auc(data.X_valid, data.y_valid, device=self.device, batch_size=128)
+                    auc = self.trainer.evaluate_auc(data.X_valid, data.y_valid, device=self.device, batch_size=128)
+                    loss = 1 - auc  # loss has to decrease, auc would increase
 
                 if loss < best_loss:
                     best_loss = loss
@@ -141,8 +145,9 @@ class NODE(BaseModel):
     @classmethod
     def define_trial_parameters(cls, trial, args):
         params = {
-            "layer_dim": trial.suggest_categorical("layer_dim", [128, 256]),
-            "num_layers": trial.suggest_int("num_layers", 2, 4),
-            "depth": trial.suggest_int("depth", 1, 2),
+            "num_layers": trial.suggest_categorical("num_layers", [2, 4, 8]),
+            "total_tree_count": trial.suggest_categorical("total_tree_count", [1024, 2048]),
+            "tree_depth": trial.suggest_categorical("depth", [6, 8]),
+            "tree_output_dim": trial.suggest_int("tree_output_dim", 2, 3)
         }
         return params

@@ -27,7 +27,6 @@ class ModelTree(BaseModel):
     def define_trial_parameters(cls, trial, args):
         params = {
             "criterion": trial.suggest_categorical("criterion", ['gradient', 'gradient-renorm-z']),
-            "max_depth": trial.suggest_int("max_depth", 2, 32, log=True),
-            "min_samples_split": trial.suggest_int("min_samples_split", 2, 32, log=True),
+            "max_depth": trial.suggest_int("max_depth", 1, 3),
         }
         return params

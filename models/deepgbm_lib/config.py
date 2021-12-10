@@ -14,7 +14,7 @@ config['loss_dr'] = 0.7
 
 # Preprocessing parameters
 config['bins'] = 32
-config['rate'] = 0.9 # train test split rate
+config['rate'] = 0.9  # train test split rate
 config['threshold'] = 10
 
 # GBDT parameters
@@ -31,10 +31,10 @@ config['emb_lr'] = 1e-3
 config['emb_epochs'] = 3
 
 # GDBT2NN Parameters
-config['tree_layers'] = [100,100,100,50] + [config['embsize']]
+config['tree_layers'] = [100, 100, 100, 50] + [config['embsize']]
 
 # CatNN Parameters
-config['embedding_size'] = 20 #4
+config['embedding_size'] = 20  # 4
 config['cate_layers'] = [16, 16]
 
 # Online parameters

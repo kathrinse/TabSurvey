@@ -153,10 +153,11 @@ class Trainer(nn.Module):
         y_test = check_numpy(y_test)
         self.model.train(False)
         with torch.no_grad():
-            logits = F.softmax(process_in_chunks(self.model, X_test, batch_size=batch_size), dim=1)
+            # logits = F.softmax(process_in_chunks(self.model, X_test, batch_size=batch_size), dim=1)
+            logits = torch.sigmoid(process_in_chunks(self.model, X_test, batch_size=batch_size))
             logits = check_numpy(logits)
             y_test = torch.tensor(y_test)
-            auc = roc_auc_score(check_numpy(to_one_hot(y_test)), logits)
+            auc = roc_auc_score(check_numpy(y_test), logits)  # to_one_hot(y_test)
         return auc
     
     def evaluate_logloss(self, X_test, y_test, device, batch_size=512):

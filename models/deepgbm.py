@@ -29,7 +29,9 @@ class DeepGBM(BaseModel):
         self.ce = CatEncoder(cat_col, num_col)
         self.ne = NumEncoder(cat_col, num_col)
 
-        deepgbm_config.update({'task': args.objective})
+        deepgbm_config.update({'task': args.objective,
+                               "epochs": args.epochs,
+                               "early-stopping": args.early_stopping_rounds})
         deepgbm_config.update(**params)
 
         print(deepgbm_config)
@@ -61,9 +63,10 @@ class DeepGBM(BaseModel):
     @classmethod
     def define_trial_parameters(cls, trial, args):
         params = {
-            "maxleaf": trial.suggest_categorical("maxleaf", [16, 32, 64, 128]),
-            "bins": trial.suggest_categorical("bins", [16, 32]),
-            "num_slices": trial.suggest_int("learning_rate", 3, 6),
-            "batch_size": trial.suggest_categorical("batch_size", [64, 128, 256, 512])
+            "n_trees": trial.suggest_categorical("n_trees", [100, 200]),
+            "maxleaf": trial.suggest_categorical("maxleaf", [64, 128]),
+            "batch_size": trial.suggest_categorical("batch_size", [128, 256, 512, 1024]),
+            "loss_de": trial.suggest_int("loss_de", 2, 10),
+            "loss_dr": trial.suggest_categorical("loss_dr", [0.7, 0.9])
         }
         return params

@@ -127,9 +127,8 @@ class DNFNet(BaseModel):
     @classmethod
     def define_trial_parameters(cls, trial, args):
         params = {
-            'initial_lr': trial.suggest_float('inital_lr', 5e-3, 5e-1, log=True),
-            'lr_decay_factor': trial.suggest_float('lr_decay_factor', 0.3, 0.7),
-            'lr_patience': trial.suggest_int('lr_patience', 5, 15),
-            'min_lr': trial.suggest_float('min_lr', 1e-7, 1e-5)
+            "n_formulas": trial.suggest_categorical("n_formulas", [64, 128, 256, 512, 1024]),  # 2048, 3072
+            "elastic_net_beta": trial.suggest_categorical("elastic_net_beta", [1.6, 1.3, 1., 0.7, 0.4, 0.1]),
+            "batch_size": trial.suggest_categorical("batch_size", [64, 125, 256, 512, 1024])
         }
         return params

@@ -23,6 +23,7 @@ my_config = {
     'GPU': '0'
 }
 
+# Values for hyperparameter search
 DNFNet_grid_params = {
     'n_formulas': [3072, 2048, 1024, 512, 256, 128, 64],
     'orthogonal_lambda': [0.],

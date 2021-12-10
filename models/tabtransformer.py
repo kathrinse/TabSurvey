@@ -30,11 +30,18 @@ class TabTransformer(BaseModel):
             num_continuous=num_continuous,  # number of continuous values
             dim_out=args.num_classes,
             mlp_act=nn.ReLU(),  # activation for final mlp, defaults to relu, but could be anything else (selu etc)
-            **self.params
+            dim=self.params["dim"],
+            depth=self.params["depth"],
+            heads=self.params["heads"],
+            attn_dropout=self.params["dropout"],
+            ff_dropout=self.params["dropout"],
+            mlp_hidden_mults=(4, 2)
         ).to(self.device)
 
     def fit(self, X, y, X_val=None, y_val=None):
-        optimizer = optim.AdamW(self.model.parameters(), lr=0.01)
+        learning_rate = 10 ** self.params["learning_rate"]
+        weight_decay = 10 ** self.params["weight_decay"]
+        optimizer = optim.AdamW(self.model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
         # For some reason this has to be set explicitly to work with categorical data
         X = np.array(X, dtype=np.float)
@@ -108,6 +115,8 @@ class TabTransformer(BaseModel):
                     val_loss += loss_func(out, batch_val_y.to(self.device))
                 val_loss /= val_dim
 
+                print("Epoch %d: Val Loss %.5f" % (epoch, val_loss))
+
                 current_idx = (i + 1) * (epoch + 1)
 
                 if val_loss < min_val_loss:
@@ -165,13 +174,12 @@ class TabTransformer(BaseModel):
     @classmethod
     def define_trial_parameters(cls, trial, args):
         params = {
-            "dim": trial.suggest_int("dim", 8, 64),  # dimension, paper set at 32
-            "depth": trial.suggest_int("depth", 3, 8),  # depth, paper recommended 6
-            "heads": trial.suggest_int("heads", 3, 8),  # heads, paper recommends 8
-            "attn_dropout": trial.suggest_float("attn_dropout", 0.05, 0.3),  # post-attention dropout
-            "ff_dropout": trial.suggest_float("ff_dropout", 0.05, 0.3),  # feed forward dropout
-            "mlp_hidden_mults": trial.suggest_categorical("mlp_hidden_mults", [(4, 2), (2, 1), (8, 4)])
-            # relative multiples of each hidden dimension of the last mlp to logits
+            "dim": trial.suggest_categorical("dim", [32, 64, 128, 256]),  # dimension, paper set at 32
+            "depth": trial.suggest_categorical("depth", [1, 2, 3, 6, 12]),  # depth, paper recommended 6
+            "heads": trial.suggest_categorical("heads", [2, 4, 8]),  # heads, paper recommends 8
+            "weight_decay": trial.suggest_int("weight_decay", -6, -1),  # x = 10 ^ u
+            "learning_rate": trial.suggest_int("learning_rate", -6, -3),  # x = 10 ^ u
+            "dropout": trial.suggest_categorical("dropout", [0, 0.1, 0.2, 0.3, 0.4, 0.5]),
         }
         return params
 
