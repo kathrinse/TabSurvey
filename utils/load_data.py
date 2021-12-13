@@ -74,7 +74,7 @@ def load_data(args):
             args.num_classes = len(le.classes_)
             print("Having", args.num_classes, "classes as target.")
 
-    scale_idx = []
+    num_idx = []
     args.cat_dims = []
 
     # Preprocess data
@@ -85,12 +85,20 @@ def load_data(args):
 
             # Setting this?
             args.cat_dims.append(len(le.classes_))
-        elif args.scale:
-            scale_idx.append(i)
 
-    if scale_idx:
+        else:
+            num_idx.append(i)
+
+    if args.scale:
         print("Scaling the data...")
         scaler = StandardScaler()
-        X[:, scale_idx] = scaler.fit_transform(X[:, scale_idx])
+        X[:, num_idx] = scaler.fit_transform(X[:, num_idx])
+
+    if args.one_hot_encode:
+        ohe = OneHotEncoder(sparse=False, handle_unknown='ignore')
+        new_x1 = ohe.fit_transform(X[:, args.cat_idx])
+        new_x2 = X[:, num_idx]
+        X = np.concatenate([new_x1, new_x2], axis=1)
+        print("New Shape:", X.shape)
 
     return X, y

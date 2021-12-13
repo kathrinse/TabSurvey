@@ -72,5 +72,9 @@ def str2model(model):
         from models.stochastic_gates import STG
         return STG
 
+    elif model == "NAM":
+        from models.neural_additive_models import NAM
+        return NAM
+
     else:
         raise NotImplementedError("Model \"" + model + "\" not yet implemented")

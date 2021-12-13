@@ -1,6 +1,7 @@
 # General parameters
 dataset: Adult
-model_name: TabTransformer # LinearModel, KNN, SVM, DecisionTree, RandomForest, XGBoost, CatBoost, LightGBM, MLP, TabNet, VIME, TabTransformer
+model_name: NAM # LinearModel, KNN, SVM, DecisionTree, RandomForest, XGBoost, CatBoost, LightGBM, ModelTree
+                # MLP, TabNet, VIME, TabTransformer, RLN, DNFNet, STG
 objective: binary_classification # Don't change
 
 # GPU parameters
@@ -19,6 +20,7 @@ seed: 221 # Don't change
 # Preprocessing parameters
 scale: 'true'
 target_encode: 'true'
+one_hot_encode: 'false'
 
 # Training parameters
 early_stopping_rounds: 20

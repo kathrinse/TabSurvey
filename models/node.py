@@ -7,7 +7,6 @@ from models.basemodel import BaseModel
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
 from qhoptim.pyt import QHAdam
 
 import numpy as np

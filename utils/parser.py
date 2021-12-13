@@ -7,7 +7,7 @@ def get_parser():
                                            formatter_class=configargparse.ArgumentDefaultsHelpFormatter)
 
     parser.add('-config', '--config', required=False, is_config_file_arg=True, help='config file path',
-               default="config/config_california_housing.yml")  # config_kddcup99     config_covertype   config_adult
+               default="config/config_california_housing.yml")  # config_kddcup99 config_adult config_covertype
 
     parser.add('--model_name', required=True, help="Name of the model that should be trained")
     parser.add('--dataset', required=True, help="Name of the dataset that will be used")
@@ -28,6 +28,7 @@ def get_parser():
 
     parser.add('--scale', action="store_true", help="Normalize input data.")
     parser.add('--target_encode', action="store_true", help="Encode the targets that they start at 0. (0, 1, 2,...)")
+    parser.add('--one_hot_encode', action="store_true", help="OneHotEncode the categorical features")
 
     parser.add('--early_stopping_rounds', type=int, help="Number of rounds before early stopping applies.")
     parser.add('--epochs', type=int, help="Max number of epochs to train.")
