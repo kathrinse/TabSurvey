@@ -82,7 +82,7 @@ class NAM(BaseModel):
             for batch_X in testloader:
                 preds = self.model(batch_X[0])[0]  # .to(self.device)
 
-                if self.args.objective == "binary_classification":
+                if self.args.objective == "binary":
                     preds = torch.sigmoid(preds)
 
                 self.predictions.append(preds)  # .detach().cpu().numpy()

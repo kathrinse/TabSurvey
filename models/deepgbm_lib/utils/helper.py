@@ -9,7 +9,7 @@ import models.deepgbm_lib.config as config
 
 
 def eval_metrics(task, true, pred):
-    if task == 'binary_classification':
+    if task == 'binary':
         logloss = log_loss(true.astype(np.float64), pred.astype(np.float64))
         auc = roc_auc_score(true, pred)
         # error = 1-sklearn.metrics.accuracy_score(true,(pred+0.5).astype(np.int32))
@@ -23,7 +23,7 @@ def eval_metrics(task, true, pred):
         
         
 def printMetric(task, metric, test_loss):
-    if task == 'binary_classification':
+    if task == 'binary':
         test_error, test_auc = metric
         print ("Test Loss of %f, Test AUC of %f" % (test_loss, test_auc))
     elif task == 'regression':

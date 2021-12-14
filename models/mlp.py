@@ -69,7 +69,7 @@ class MLP(BaseModel, nn.Module):
             y_val = y_val.float()
         elif self.args.objective == "classification":
             loss_func = nn.CrossEntropyLoss()
-        elif self.args.objective == "binary_classification":
+        elif self.args.objective == "binary":
             loss_func = nn.BCEWithLogitsLoss()
             y = y.float()
             y_val = y_val.float()
@@ -90,7 +90,7 @@ class MLP(BaseModel, nn.Module):
 
                 out = self.forward(batch_X.to(self.device))
 
-                if self.args.objective == "regression" or self.args.objective == "binary_classification":
+                if self.args.objective == "regression" or self.args.objective == "binary":
                     out = out.squeeze()
 
                 loss = loss_func(out, batch_y.to(self.device))
@@ -104,7 +104,7 @@ class MLP(BaseModel, nn.Module):
                 for val_i, (batch_val_X, batch_val_y) in enumerate(val_loader):
                     out = self.forward(batch_val_X.to(self.device))
 
-                    if self.args.objective == "regression" or self.args.objective == "binary_classification":
+                    if self.args.objective == "regression" or self.args.objective == "binary":
                         out = out.squeeze()
 
                     val_loss += loss_func(out, batch_val_y.to(self.device))

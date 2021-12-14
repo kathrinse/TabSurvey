@@ -32,7 +32,7 @@ class XGBoost(BaseModel):
             self.params["objective"] = "multi:softprob"
             self.params["num_class"] = args.num_classes
             self.params["eval_metric"] = "mlogloss"
-        elif args.objective == "binary_classification":
+        elif args.objective == "binary":
             self.params["objective"] = "binary:logistic"
             self.params["eval_metric"] = "auc"
 
@@ -48,7 +48,7 @@ class XGBoost(BaseModel):
         test = xgb.DMatrix(X)
         self.predictions = self.model.predict(test)
 
-        if self.args.objective == "binary_classification":
+        if self.args.objective == "binary":
             self.predictions = self.predictions.reshape(-1, 1)
 
         return self.predictions
@@ -87,7 +87,7 @@ class CatBoost(BaseModel):
 
         if args.objective == "regression":
             self.model = cat.CatBoostRegressor(**self.params)
-        elif args.objective == "classification" or args.objective == "binary_classification":
+        elif args.objective == "classification" or args.objective == "binary":
             self.model = cat.CatBoostClassifier(**self.params)
 
     def fit(self, X, y, X_val=None, y_val=None):
@@ -122,7 +122,7 @@ class LightGBM(BaseModel):
             self.params["objective"] = "multiclass"
             self.params["num_class"] = args.num_classes
             self.params["metric"] = "multiclass"
-        elif args.objective == "binary_classification":
+        elif args.objective == "binary":
             self.params["objective"] = "binary"
             self.params["metric"] = "auc"
 
@@ -138,7 +138,7 @@ class LightGBM(BaseModel):
         # Predicts probabilities if the task is classification
         self.predictions = self.model.predict(X)
 
-        if self.args.objective == "binary_classification":
+        if self.args.objective == "binary":
             self.predictions = self.predictions.reshape(-1, 1)
 
         return self.predictions

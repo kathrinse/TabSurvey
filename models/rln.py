@@ -83,7 +83,7 @@ class RLN(BaseModel):
         elif self.args.objective == "classification":
             loss_fn = "categorical_crossentropy"
             act_fn = "softmax"
-        elif self.args.objective == "binary_classification":
+        elif self.args.objective == "binary":
             loss_fn = "binary_crossentropy"
             act_fn = "sigmoid"
 

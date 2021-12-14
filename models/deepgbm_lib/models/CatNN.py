@@ -26,8 +26,7 @@ class CatNN(nn.Module):
         self.deep_layers_activation = deep_layers_activation
         self.bias = 0
         self.deep_layers = config.config['cate_layers']
-        
-        
+
         stdv = math.sqrt(1.0 /len(feature_sizes))
         
         # A simple NN based on the DeepFM
@@ -58,7 +57,7 @@ class CatNN(nn.Module):
         self.batch_norm_2 = nn.BatchNorm1d(self.deep_layers[1])
         
         # Set correct loss
-        if self.task == 'binary_classification':
+        if self.task == 'binary':
             self.criterion = nn.BCELoss()
         elif self.task == 'regression':
             self.criterion = nn.MSELoss()
@@ -117,9 +116,9 @@ class CatNN(nn.Module):
         x_deep = activation(x_deep)
         
         # Why this?
-        total_sum = torch.sum(dropout_1,1) + torch.sum(dropout_2,1) + torch.sum(x_deep,1) + self.bias
+        total_sum = torch.sum(dropout_1, 1) + torch.sum(dropout_2, 1) + torch.sum(x_deep, 1) + self.bias
         
-        if self.task == 'binary_classification':
+        if self.task == 'binary':
             return nn.Sigmoid()(total_sum)
         
         # TODO: Classification missing

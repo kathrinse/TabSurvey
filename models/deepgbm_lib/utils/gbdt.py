@@ -25,11 +25,11 @@ def TrainGBDT(train_x, train_y, test_x, test_y):
     
     num_class = 1
     
-    if  task == 'regression':
+    if task == 'regression':
         objective = "regression"
         metric = "mse"
         boost_from_average = True
-    elif task == 'binary_classification':
+    elif task == 'binary':
         objective = "binary"
         metric = "auc"
         boost_from_average = True

@@ -37,7 +37,7 @@ class EmbeddingModel(nn.Module):
         self.dropout = torch.nn.Dropout()
         if self.task == 'regression':
             self.criterion = nn.MSELoss()
-        elif self.task == 'binary_classification':
+        elif self.task == 'binary':
             self.criterion = nn.BCELoss()
         else:
             print ("Classification task not yet implemented!")
@@ -66,7 +66,7 @@ class EmbeddingModel(nn.Module):
         # out = self.output_fc(out)
         sum_out = torch.sum(out,-1,True)
         
-        if self.task == 'binary_classification':
+        if self.task == 'binary':
             return self.sigmoid(sum_out), out
         
         # TODO: Implement classification

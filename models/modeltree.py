@@ -16,7 +16,7 @@ class ModelTree(BaseModel):
             self.model = ModelTreeRegressor(**self.params)
         elif args.objective == "classification":
             raise NotImplementedError("ModelTree is not implemented for multi-class classification yet")
-        elif args.objective == "binary_classification":
+        elif args.objective == "binary":
             self.model = ModelTreeClassifier(**self.params)
 
     def fit(self, X, y, X_val=None, y_val=None):

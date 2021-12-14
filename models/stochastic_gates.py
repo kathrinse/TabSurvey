@@ -16,8 +16,8 @@ class STG(BaseModel):
 
         device = torch.device("cuda" if torch.cuda.is_available() and args.use_gpu else "cpu")
 
-        task = "classification" if self.args.objective == "binary_classification" else self.args.objective
-        out_dim = 2 if self.args.objective == "binary_classification" else self.args.num_classes
+        task = "classification" if self.args.objective == "binary" else self.args.objective
+        out_dim = 2 if self.args.objective == "binary" else self.args.num_classes
 
         self.model = STGModel(task_type=task, input_dim=self.args.num_features,
                               output_dim=out_dim, activation='tanh', sigma=0.5,

@@ -35,11 +35,9 @@ class DeepFM(BaseModel):
             fixlen_feature_columns = [SparseFeat("dummy", 1)] + \
                                      [DenseFeat(str(feat), 1, ) for feat in range(args.num_features)]
 
-        task = "binary" if args.objective == "binary_classification" else args.objective
-
         self.model = DeepFMModel(linear_feature_columns=fixlen_feature_columns,
                                  dnn_feature_columns=fixlen_feature_columns,
-                                 task=task, device=self.device, **self.params)
+                                 task=args.objective, device=self.device, dnn_dropout=self.params["dnn_dropout"])
 
     def fit(self, X, y, X_val=None, y_val=None):
         X = np.array(X, dtype=np.float)
@@ -48,7 +46,7 @@ class DeepFM(BaseModel):
         X_val = np.array(X_val, dtype=np.float)
         X_val_dict = {str(name): X_val[:, name] for name in range(self.args.num_features)}
 
-        if self.args.objective == "binary_classification":
+        if self.args.objective == "binary":
             loss = "binary_crossentropy"
             metric = "binary_crossentropy"
         elif self.args.objective == "regression":
@@ -63,7 +61,8 @@ class DeepFM(BaseModel):
             X_dict["dummy"] = np.zeros(X.shape[0])
             X_val_dict["dummy"] = np.zeros(X_val.shape[0])
 
-        self.model.fit(X_dict, y, batch_size=128, epochs=self.args.epochs, validation_data=(X_val_dict, y_val),
+        self.model.fit(X_dict, y, batch_size=self.params["batch_size"], epochs=self.args.epochs,
+                       validation_data=(X_val_dict, y_val),
                        callbacks=[tf.keras.callbacks.EarlyStopping(monitor="val_" + metric, verbose=1,
                                                                    patience=self.args.early_stopping_rounds)])
 
@@ -88,6 +87,7 @@ class DeepFM(BaseModel):
     def define_trial_parameters(cls, trial, args):
         params = {
             "dnn_dropout": trial.suggest_float("dnn_dropout", 0, 0.9),
+            "batch_size": trial.suggest_categorical("batch_size", [64, 128, 256, 512])
         }
         return params
 

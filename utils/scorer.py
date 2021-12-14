@@ -7,7 +7,7 @@ def get_scorer(args):
         return RegScorer()
     elif args.objective == "classification":
         return ClassScorer()
-    elif args.objective == "binary_classification":
+    elif args.objective == "binary":
         return BinScorer()
     else:
         raise NotImplementedError("No scorer for \"" + args.objective + "\" implemented")

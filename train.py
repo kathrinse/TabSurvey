@@ -18,7 +18,7 @@ def cross_validation(model, X, y, args, save_model=False):
 
     if args.objective == "regression":
         kf = KFold(n_splits=args.num_splits, shuffle=args.shuffle, random_state=args.seed)
-    elif args.objective == "classification" or args.objective == "binary_classification":
+    elif args.objective == "classification" or args.objective == "binary":
         kf = StratifiedKFold(n_splits=args.num_splits, shuffle=args.shuffle, random_state=args.seed)
 
     for i, (train_index, test_index) in enumerate(kf.split(X, y)):

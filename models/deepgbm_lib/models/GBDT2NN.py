@@ -42,7 +42,7 @@ class GBDT2NN(nn.Module):
         print('Init GBDT2NN succeed!')
         if self.task == 'regression':
             self.criterion = nn.MSELoss()
-        elif self.task == 'binary_classification':
+        elif self.task == 'binary':
             self.criterion = nn.BCELoss()
         else:
             print ("Classification not yet implemented")
@@ -67,7 +67,7 @@ class GBDT2NN(nn.Module):
         pred = self.batchmul(out, self.bdenses[-1])
         out = torch.addmm(self.out_bias, pred, self.out_weight)
         
-        if self.task == 'binary_classification':
+        if self.task == 'binary':
             return self.sigmoid(out), pred
         
         # TODO: implement classification

@@ -38,7 +38,7 @@ class DeepGBM(torch.nn.Module):
 
         if self.task == 'regression':
             self.criterion = nn.MSELoss()
-        elif self.task == 'binary_classification':
+        elif self.task == 'binary':
             self.criterion = nn.BCELoss()
         elif self.task == 'classification':
             print("Classification not yet implemented")
@@ -52,7 +52,7 @@ class DeepGBM(torch.nn.Module):
 
         out = self.alpha * gbdt2nn_out.view(-1) + self.beta * catnn_out.view(-1)
 
-        if self.task == 'binary_classification':
+        if self.task == 'binary':
             return nn.Sigmoid()(out), gbdt2nn_pred
 
         # TODO: Implement classification

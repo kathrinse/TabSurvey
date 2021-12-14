@@ -25,7 +25,7 @@ class TabNet(BaseModel):
         if args.objective == "regression":
             self.model = TabNetRegressor(**self.tabnet_params)
             self.metric = ["rmse"]
-        elif args.objective == "classification" or args.objective == "binary_classification":
+        elif args.objective == "classification" or args.objective == "binary":
             self.model = TabNetClassifier(**self.tabnet_params)
             self.metric = ["logloss"]
 

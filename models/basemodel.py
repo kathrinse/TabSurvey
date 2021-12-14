@@ -21,7 +21,7 @@ class BaseModel:
     def predict(self, X):
         if self.args.objective == "regression":
             self.predictions = self.model.predict(X)
-        elif self.args.objective == "classification" or self.args.objective == "binary_classification":
+        elif self.args.objective == "classification" or self.args.objective == "binary":
             self.predictions = self.model.predict_proba(X)
         return self.predictions
 
@@ -47,7 +47,7 @@ class BaseModel:
         if self.args.objective == "regression":
             # Save array where [:,0] is the truth and [:,1] the prediction
             y = np.concatenate((y_true.reshape(-1, 1), self.predictions.reshape(-1, 1)), axis=1)
-        elif self.args.objective == "classification" or self.args.objective == "binary_classification":
+        elif self.args.objective == "classification" or self.args.objective == "binary":
             # Save array where [:,0] is the truth and [:,1:] are the prediction probabilities
             y = np.concatenate((y_true.reshape(-1, 1), self.predictions), axis=1)
 

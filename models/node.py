@@ -34,7 +34,7 @@ class NODE(BaseModel):
                 node_lib.Lambda(lambda x: x[..., 0].mean(dim=-1)),  # average first channels of every tree
             ).to(self.device)
 
-        elif args.objective == "classification" or args.objective == "binary_classification":
+        elif args.objective == "classification" or args.objective == "binary":
             self.model = nn.Sequential(
                 node_lib.DenseBlock(args.num_features,
                                     # layer_dim=1024, num_layers=2, depth=6,
@@ -65,7 +65,7 @@ class NODE(BaseModel):
         elif self.args.objective == "classification":
             loss_func = F.cross_entropy
             data.y_train = data.y_train.astype(int)
-        elif self.args.objective == "binary_classification":
+        elif self.args.objective == "binary":
             loss_func = F.binary_cross_entropy_with_logits
             data.y_train = data.y_train.reshape(-1, 1)
 
@@ -96,7 +96,7 @@ class NODE(BaseModel):
                     loss = self.trainer.evaluate_mse(data.X_valid, data.y_valid, device=self.device, batch_size=128)
                 elif self.args.objective == "classification":
                     loss = self.trainer.evaluate_logloss(data.X_valid, data.y_valid, device=self.device, batch_size=128)
-                elif self.args.objective == "binary_classification":
+                elif self.args.objective == "binary":
                     auc = self.trainer.evaluate_auc(data.X_valid, data.y_valid, device=self.device, batch_size=128)
                     loss = 1 - auc  # loss has to decrease, auc would increase
 
@@ -127,7 +127,7 @@ class NODE(BaseModel):
 
             if self.args.objective == "classification":
                 prediction = F.softmax(prediction, dim=1)
-            elif self.args.objective == "binary_classification":
+            elif self.args.objective == "binary":
                 prediction = torch.sigmoid(prediction)
 
             prediction = check_numpy(prediction)

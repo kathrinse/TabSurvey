@@ -20,11 +20,11 @@ class LinearModel(BaseModel):
         super().__init__(params, args)
 
         if args.objective == "regression":
-            self.model = linear_model.LinearRegression(max_iter=args.epochs, n_jobs=-1)
+            self.model = linear_model.LinearRegression(n_jobs=-1)
         elif args.objective == "classification":
-            self.model = linear_model.LogisticRegression(max_iter=args.epochs, multi_class="multinomial", n_jobs=-1)
-        elif args.objective == "binary_classification":
-            self.model = linear_model.LogisticRegression(max_iter=args.epochs, n_jobs=-1)
+            self.model = linear_model.LogisticRegression(multi_class="multinomial", n_jobs=-1)
+        elif args.objective == "binary":
+            self.model = linear_model.LogisticRegression(n_jobs=-1)
 
     @classmethod
     def define_trial_parameters(cls, trial, args):
@@ -46,7 +46,7 @@ class KNN(BaseModel):
 
         if args.objective == "regression":
             self.model = neighbors.KNeighborsRegressor(n_neighbors=params["n_neighbors"], n_jobs=-1)
-        elif args.objective == "classification" or args.objective == "binary_classification":
+        elif args.objective == "classification" or args.objective == "binary":
             self.model = neighbors.KNeighborsClassifier(n_neighbors=params["n_neighbors"], n_jobs=-1)
 
     @classmethod
@@ -71,7 +71,7 @@ class SVM(BaseModel):
 
         if args.objective == "regression":
             self.model = svm.SVR(C=params["C"])
-        elif args.objective == "classification" or args.objective == "binary_classification":
+        elif args.objective == "classification" or args.objective == "binary":
             self.model = svm.SVC(C=params["C"], probability=True)
 
     @classmethod
@@ -96,7 +96,7 @@ class DecisionTree(BaseModel):
 
         if args.objective == "regression":
             self.model = tree.DecisionTreeRegressor(max_depth=params["max_depth"])
-        elif args.objective == "classification" or args.objective == "binary_classification":
+        elif args.objective == "classification" or args.objective == "binary":
             self.model = tree.DecisionTreeClassifier(max_depth=params["max_depth"])
 
     @classmethod
@@ -122,7 +122,7 @@ class RandomForest(BaseModel):
         if args.objective == "regression":
             self.model = ensemble.RandomForestRegressor(n_estimators=params["n_estimators"],
                                                         max_depth=params["max_depth"], n_jobs=-1)
-        elif args.objective == "classification" or args.objective == "binary_classification":
+        elif args.objective == "classification" or args.objective == "binary":
             self.model = ensemble.RandomForestClassifier(n_estimators=params["n_estimators"],
                                                          max_depth=params["max_depth"], n_jobs=-1)
 

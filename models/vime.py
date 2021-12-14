@@ -98,7 +98,7 @@ class VIME(BaseModel):
             y_val = y_val.float()
         elif self.args.objective == "classification":
             loss_func_supervised = nn.CrossEntropyLoss()
-        elif self.args.objective == "binary_classification":
+        elif self.args.objective == "binary":
             loss_func_supervised = nn.BCEWithLogitsLoss()
             y = y.float()
             y_val = y_val.float()
@@ -131,7 +131,7 @@ class VIME(BaseModel):
                     yv_hat = self.model_semi(batch_unlab_encoded)
                     yv_hats[rep] = yv_hat
 
-                if self.args.objective == "regression" or self.args.objective == "binary_classification":
+                if self.args.objective == "regression" or self.args.objective == "binary":
                     y_hat = y_hat.squeeze()
 
                 y_loss = loss_func_supervised(y_hat, batch_y.to(self.device))
@@ -148,7 +148,7 @@ class VIME(BaseModel):
                     batch_val_X_encoded = self.model_self.input_layer(batch_val_X.to(self.device))
                     y_hat = self.model_semi(batch_val_X_encoded)
 
-                    if self.args.objective == "regression" or self.args.objective == "binary_classification":
+                    if self.args.objective == "regression" or self.args.objective == "binary":
                         y_hat = y_hat.squeeze()
 
                     val_loss += loss_func_supervised(y_hat, batch_val_y.to(self.device))
