@@ -76,5 +76,9 @@ def str2model(model):
         from models.neural_additive_models import NAM
         return NAM
 
+    elif model == "DeepFM":
+        from models.deepfm import DeepFM
+        return DeepFM
+
     else:
         raise NotImplementedError("Model \"" + model + "\" not yet implemented")
