@@ -1,8 +1,8 @@
 # General parameters
 dataset: Adult
-model_name: NAM # LinearModel, KNN, SVM, DecisionTree, RandomForest, XGBoost, CatBoost, LightGBM, ModelTree
-                # MLP, TabNet, VIME, TabTransformer, RLN, DNFNet, STG
-objective: binary_classification # Don't change
+model_name: DeepFM # LinearModel, KNN, SVM, DecisionTree, RandomForest, XGBoost, CatBoost, LightGBM, ModelTree
+                # MLP, TabNet, VIME, TabTransformer, RLN, DNFNet, STG, NAM
+objective: binary # Don't change
 
 # GPU parameters
 use_gpu: 'false'

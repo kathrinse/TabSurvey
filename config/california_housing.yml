@@ -1,6 +1,8 @@
 # General parameters
 dataset: CaliforniaHousing
-model_name: TabNet # LinearModel, KNN, SVM, DecisionTree, RandomForest, XGBoost, CatBoost, LightGBM, ModelTree, TabNet, MLP, VIME, TabTransformer
+model_name: LinearModel # LinearModel, KNN, SVM, DecisionTree, RandomForest, MLP
+                           # XGBoost, CatBoost, LightGBM,
+                           # TabNet, VIME, TabTransformer, ModelTree, NODE, DeepGBM, RLN, DNFNet, STG, NAM, DeepFM
 objective: regression
 
 # GPU parameters
@@ -8,7 +10,7 @@ use_gpu: 'false'
 gpu_id: 0
 
 # Optuna parameters - https://optuna.org/
-n_trials: 3
+n_trials: 2
 direction: minimize
 
 # Cross validation parameters

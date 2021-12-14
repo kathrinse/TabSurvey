@@ -1,6 +1,7 @@
 # General parameters
-dataset: KddCup99
-model_name: VIME # LinearModel, KNN, SVM, DecisionTree, RandomForest, XGBoost, CatBoost, LightGBM, MLP, TabNet, VIME, TabTransformer
+dataset: Covertype
+model_name: DeepFM # LinearModel, KNN, SVM, DecisionTree, RandomForest, XGBoost, CatBoost, LightGBM,
+    # ModelTree, TabNet, VIME, TabTransformer, RLN, DNFNet, STG, NAM
 objective: classification # Don't change
 
 # GPU parameters
@@ -8,16 +9,16 @@ use_gpu: 'false'
 gpu_id: 0
 
 # Optuna parameters - https://optuna.org/
-n_trials: 2
+n_trials: 1
 direction: minimize
 
 # Cross validation parameters
-num_splits: 3
+num_splits: 5
 shuffle: 'true'
 seed: 221 # Don't change
 
 # Preprocessing parameters
-scale: 'false'
+scale: 'true'
 target_encode: 'true'
 
 # Training parameters
@@ -26,6 +27,5 @@ epochs: 1000
 logging_period: 100
 
 # About the data
-num_classes: 4 # for classification
-num_features: 41
-cat_idx: [1,2,3]
+num_classes: 7 # for classification
+num_features: 54
