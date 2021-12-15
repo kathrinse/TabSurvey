@@ -78,12 +78,13 @@ class CatBoost(BaseModel):
         self.params["od_type"] = "Iter"
         self.params["od_wait"] = self.args.early_stopping_rounds
         self.params["verbose"] = self.args.logging_period
+        self.params["train_dir"] = "output/CatBoost/" + self.args.dataset + "/catboost_info"
 
         if args.use_gpu:
             self.params["task_type"] = "GPU"
-            self.params["devices"] = [0]
+            self.params["devices"] = [self.args.gpu_id]
 
-        self.params["cat_features"] = args.cat_idx
+        self.params["cat_features"] = self.args.cat_idx
 
         if args.objective == "regression":
             self.model = cat.CatBoostRegressor(**self.params)
