@@ -80,5 +80,9 @@ def str2model(model):
         from models.deepfm import DeepFM
         return DeepFM
 
+    elif model == "SAINT":
+        from models.saint import SAINT
+        return SAINT
+
     else:
         raise NotImplementedError("Model \"" + model + "\" not yet implemented")
