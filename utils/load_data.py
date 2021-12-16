@@ -58,6 +58,31 @@ def load_data(args):
 
         X = df[features].to_numpy()
         y = df[label].to_numpy()
+
+    elif args.dataset == "HIGGS":  # Binary classification dataset with categorical data
+        path = "/home/vadim/Documents/Projects/2021/DeepTLF/data/HIGGS.csv.gz"
+        df = pd.read_csv(path, header=None)
+        df.columns = ['x' + str(i) for i in range(df.shape[1])]
+        num_col = list(df.drop('x21', 1).columns)
+        cat_col = ['x21']
+        label_col = 'x0'
+
+        def fe(x):
+            if x > 2:
+                return 1
+            elif x > 1:
+                return 0
+            else:
+                return 2
+
+        df.x21 = df.x21.apply(fe)
+
+        # Fill NaN with something better?
+        df.fillna(0, inplace=True)
+
+        X = df[num_col + cat_col].to_numpy()
+        y = df[label_col].to_numpy()
+
     else:
         raise AttributeError("Dataset \"" + args.dataset + "\" not available")
 

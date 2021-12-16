@@ -35,7 +35,11 @@ MODELS=( ["LinearModel"]=$SKLEARN_ENV
          # ["NAM"]=$TORCH_ENV
           )
 
-CONFIGS=("config/california_housing.yml" ) # "config/adult.yml" "config/covertype.yml"
+CONFIGS=( "config/adult.yml"
+          "config/covertype.yml"
+          "config/california_housing.yml"
+          "config/higgs.yml"
+          )
 
 # Some models take forever for the classification dataset...
 EXCEPT=("TabNet") # "KNN"

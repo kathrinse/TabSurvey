@@ -7,7 +7,7 @@ def get_parser():
                                            formatter_class=configargparse.ArgumentDefaultsHelpFormatter)
 
     parser.add('-config', '--config', required=False, is_config_file_arg=True, help='config file path',
-               default="config/california_housing.yml")  # kddcup99 adult covertype
+               default="config/adult.yml")  # kddcup99 covertype california_housing adult higgs
 
     parser.add('--model_name', required=True, help="Name of the model that should be trained")
     parser.add('--dataset', required=True, help="Name of the dataset that will be used")
