@@ -42,7 +42,6 @@ class DeepGBM(torch.nn.Module):
             self.criterion = nn.BCELoss()
         elif self.task == 'classification':
             print("Classification not yet implemented")
-            # TODO Implement classification
 
     def forward(self, Xg, Xd):
         Xd = Xd.long()
@@ -55,7 +54,6 @@ class DeepGBM(torch.nn.Module):
         if self.task == 'binary':
             return nn.Sigmoid()(out), gbdt2nn_pred
 
-        # TODO: Implement classification
         return out, gbdt2nn_pred
 
     def joint_loss(self, out, target, gbdt2nn_emb_pred, gbdt2nn_emb_target, ratio):
