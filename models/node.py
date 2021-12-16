@@ -82,6 +82,8 @@ class NODE(BaseModel):
         best_loss = float('inf')
         best_step_loss = 0
 
+        early_stopping = self.args.early_stopping_rounds + self.args.logging_period
+
         for batch in node_lib.iterate_minibatches(data.X_train, data.y_train, batch_size=64, shuffle=True,
                                                   epochs=self.args.epochs):
 
@@ -92,12 +94,17 @@ class NODE(BaseModel):
                 self.trainer.average_checkpoints(out_tag='avg')
                 self.trainer.load_checkpoint(tag='avg')
 
+                print("Loss %.5f" % (metrics['loss']))
+
                 if self.args.objective == "regression":
                     loss = self.trainer.evaluate_mse(data.X_valid, data.y_valid, device=self.device, batch_size=128)
+                    print("Val MSE: %0.5f" % loss)
                 elif self.args.objective == "classification":
                     loss = self.trainer.evaluate_logloss(data.X_valid, data.y_valid, device=self.device, batch_size=128)
+                    print("Val LogLoss: %0.5f" % loss)
                 elif self.args.objective == "binary":
                     auc = self.trainer.evaluate_auc(data.X_valid, data.y_valid, device=self.device, batch_size=128)
+                    print("Val AUC: %0.5f" % auc)
                     loss = 1 - auc  # loss has to decrease, auc would increase
 
                 if loss < best_loss:
@@ -108,15 +115,11 @@ class NODE(BaseModel):
                 self.trainer.load_checkpoint()  # last
                 self.trainer.remove_old_temp_checkpoints()
 
-                print("Loss %.5f" % (metrics['loss']))
-                print("Val Loss: %0.5f" % loss)
-
-                # Todo: Something feels wrong with this early stopping
-                if self.trainer.step > best_step_loss + self.args.early_stopping_rounds:
-                    print('BREAK. There is no improvment for {} steps'.format(self.args.early_stopping_rounds))
-                    print("Best step: ", best_step_loss)
-                    print("Best Val Loss: %0.5f" % best_loss)
-                    break
+            if self.trainer.step > best_step_loss + early_stopping:
+                print('BREAK. There is no improvment for {} steps'.format(early_stopping))
+                print("Best step: ", best_step_loss)
+                print("Best Val Loss: %0.5f" % best_loss)
+                break
 
     def predict(self, X):
         self.trainer.load_checkpoint(tag="best")
@@ -146,7 +149,7 @@ class NODE(BaseModel):
         params = {
             "num_layers": trial.suggest_categorical("num_layers", [2, 4, 8]),
             "total_tree_count": trial.suggest_categorical("total_tree_count", [1024, 2048]),
-            "tree_depth": trial.suggest_categorical("depth", [6, 8]),
+            "tree_depth": trial.suggest_categorical("tree_depth", [6, 8]),
             "tree_output_dim": trial.suggest_int("tree_output_dim", 2, 3)
         }
         return params

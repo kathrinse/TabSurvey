@@ -14,14 +14,14 @@ class STG(BaseModel):
     def __init__(self, params, args):
         super().__init__(params, args)
 
-        device = torch.device("cuda" if torch.cuda.is_available() and args.use_gpu else "cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() and args.use_gpu else "cpu")
 
         task = "classification" if self.args.objective == "binary" else self.args.objective
         out_dim = 2 if self.args.objective == "binary" else self.args.num_classes
 
         self.model = STGModel(task_type=task, input_dim=self.args.num_features,
                               output_dim=out_dim, activation='tanh', sigma=0.5,
-                              optimizer='SGD',  feature_selection=True, random_state=1, device=device,
+                              optimizer='SGD',  feature_selection=True, random_state=1, device=self.device,
                               **self.params)  # batch_size=128, hidden_dims=[500, 50, 10],
 
     def fit(self, X, y, X_val=None, y_val=None):
@@ -34,6 +34,8 @@ class STG(BaseModel):
                        print_interval=self.args.logging_period)  # early_stop=True self.args.epochs
 
     def predict(self, X):
+        # This great implementation doesn't want the predictions to be computed on the GPU...
+        self.model._model.to("cpu")
         pred = self.model.predict(X).reshape(-1, 1)
 
         # Predict only gives the final predictions and not the needed probabilities!
@@ -56,12 +58,9 @@ class STG(BaseModel):
         params = {
             "learning_rate": trial.suggest_float("learning_rate", 1e-4, 1e-1, log=True),
             "lam": trial.suggest_float("lam", 1e-3, 10, log=True),
+            # Change also the number and size of the hidden_dims?
             "hidden_dims": trial.suggest_categorical("hidden_dims", [[500, 50, 10], [60, 20],
                                                                      [500, 500, 10], [500, 400, 20]]),
-            "batch_size": trial.suggest_categorical("batch_size", [64, 125, 256, 512, 1024])
-
-            # Change also the number and size of the hidden_dims?!
+            "batch_size": trial.suggest_categorical("batch_size", [64, 128, 256, 512, 1024])
         }
-
-        print(params)
         return params

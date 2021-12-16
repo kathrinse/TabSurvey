@@ -18,7 +18,7 @@ def save_model_to_file(model, args, extension=""):
 def save_results_to_file(args, results, train_time=None, test_time=None, best_params=None):
     filename = get_output_path(args, filename="results", file_type="txt")
 
-    with open(filename, "w") as text_file:
+    with open(filename, "a") as text_file:
         text_file.write(args.model_name + " - " + args.dataset + "\n\n")
 
         for key, value in results.items():
@@ -27,7 +27,7 @@ def save_results_to_file(args, results, train_time=None, test_time=None, best_pa
         text_file.write("\nTrain time: %f\n" % train_time)
         text_file.write("Test time: %f\n" % test_time)
 
-        text_file.write("\nBest Parameters: %s" % best_params)
+        text_file.write("\nBest Parameters: %s\n\n\n" % best_params)
 
 
 def save_hyperparameters_to_file(args, params, results):

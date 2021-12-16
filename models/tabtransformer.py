@@ -25,12 +25,18 @@ class TabTransformer(BaseModel):
         self.device = torch.device('cuda' if args.use_gpu and torch.cuda.is_available() else 'cpu')
         print("On Device:", self.device)
 
+        # Decreasing some hyperparameter to cope with memory issues
+        dim = self.params["dim"] if args.num_features < 50 else 8
+        self.batch_size = self.params["batch_size"] if args.num_features < 50 else 64
+
+        print("Using dim %d and batch size %d" % (dim, self.batch_size))
+
         self.model = TabTransformerModel(
             categories=categories_unique,  # tuple (or list?) containing the number of unique values in each category
             num_continuous=num_continuous,  # number of continuous values
             dim_out=args.num_classes,
             mlp_act=nn.ReLU(),  # activation for final mlp, defaults to relu, but could be anything else (selu etc)
-            dim=self.params["dim"],
+            dim=dim,
             depth=self.params["depth"],
             heads=self.params["heads"],
             attn_dropout=self.params["dropout"],
@@ -59,17 +65,17 @@ class TabTransformer(BaseModel):
             y_val = y_val.float()
         elif self.args.objective == "classification":
             loss_func = nn.CrossEntropyLoss()
-        elif self.args.objective == "binary":
+        else:
             loss_func = nn.BCEWithLogitsLoss()
             y = y.float()
             y_val = y_val.float()
 
         train_dataset = TensorDataset(X, y)
-        train_loader = DataLoader(dataset=train_dataset, batch_size=64, shuffle=True,
+        train_loader = DataLoader(dataset=train_dataset, batch_size=self.batch_size, shuffle=True,
                                   num_workers=2)
 
         val_dataset = TensorDataset(X_val, y_val)
-        val_loader = DataLoader(dataset=val_dataset, batch_size=64, shuffle=True)
+        val_loader = DataLoader(dataset=val_dataset, batch_size=512, shuffle=True)
 
         val_dim = y_val.shape[0]
         min_val_loss = float("inf")
@@ -141,7 +147,7 @@ class TabTransformer(BaseModel):
         X = torch.tensor(X).float()
 
         test_dataset = TensorDataset(X)
-        test_loader = DataLoader(dataset=test_dataset, batch_size=64, shuffle=True, num_workers=2)
+        test_loader = DataLoader(dataset=test_dataset, batch_size=512, shuffle=True, num_workers=2)
 
         self.predictions = []
 
@@ -180,6 +186,7 @@ class TabTransformer(BaseModel):
             "weight_decay": trial.suggest_int("weight_decay", -6, -1),  # x = 10 ^ u
             "learning_rate": trial.suggest_int("learning_rate", -6, -3),  # x = 10 ^ u
             "dropout": trial.suggest_categorical("dropout", [0, 0.1, 0.2, 0.3, 0.4, 0.5]),
+            "batch_size": trial.suggest_categorical("batch_size", [64, 128, 256, 512])
         }
         return params
 

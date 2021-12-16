@@ -32,7 +32,7 @@ class MLP(BaseModel, nn.Module):
         self.output_layer = nn.Linear(hidden_dim, output_dim)
 
         self.device = torch.device('cuda' if args.use_gpu and torch.cuda.is_available() else 'cpu')
-        print("On Device:", self.device)
+        # print("On Device:", self.device)
         self.to(self.device)
 
     def forward(self, x):
@@ -69,7 +69,7 @@ class MLP(BaseModel, nn.Module):
             y_val = y_val.float()
         elif self.args.objective == "classification":
             loss_func = nn.CrossEntropyLoss()
-        elif self.args.objective == "binary":
+        else:
             loss_func = nn.BCEWithLogitsLoss()
             y = y.float()
             y_val = y_val.float()
@@ -81,7 +81,6 @@ class MLP(BaseModel, nn.Module):
         val_dataset = TensorDataset(X_val, y_val)
         val_loader = DataLoader(dataset=val_dataset, batch_size=self.params["batch_size"], shuffle=True)
 
-        val_dim = y_val.shape[0]
         min_val_loss = float("inf")
         min_val_loss_idx = 0
 
@@ -101,6 +100,7 @@ class MLP(BaseModel, nn.Module):
 
                 # Early Stopping
                 val_loss = 0.0
+                val_dim = 0
                 for val_i, (batch_val_X, batch_val_y) in enumerate(val_loader):
                     out = self.forward(batch_val_X.to(self.device))
 
@@ -108,9 +108,12 @@ class MLP(BaseModel, nn.Module):
                         out = out.squeeze()
 
                     val_loss += loss_func(out, batch_val_y.to(self.device))
+                    val_dim += 1
                 val_loss /= val_dim
 
                 current_idx = (i + 1) * (epoch + 1)
+
+                print("Epoch %d, step % i, Loss: %.5f, Val Loss: %.5f" % (epoch, i, loss, val_loss))
 
                 if val_loss < min_val_loss:
                     min_val_loss = val_loss
@@ -140,7 +143,11 @@ class MLP(BaseModel, nn.Module):
         self.predictions = []
         with torch.no_grad():
             for batch_X in test_loader:
-                preds = torch.sigmoid(self.forward(batch_X[0].to(self.device)))
+                preds = self.forward(batch_X[0].to(self.device))
+
+                if self.args.objective == "binary":
+                    preds = torch.sigmoid(preds)
+
                 self.predictions.append(preds.detach().cpu().numpy())
 
         self.predictions = np.concatenate(self.predictions)

@@ -15,7 +15,9 @@ class ModelTree(BaseModel):
         if args.objective == "regression":
             self.model = ModelTreeRegressor(**self.params)
         elif args.objective == "classification":
-            raise NotImplementedError("ModelTree is not implemented for multi-class classification yet")
+            print("ModelTree is not implemented for multi-class classification yet")
+            import sys
+            sys.exit(0)
         elif args.objective == "binary":
             self.model = ModelTreeClassifier(**self.params)
 

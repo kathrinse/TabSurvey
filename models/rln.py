@@ -1,6 +1,6 @@
 from models.basemodel import BaseModel
 
-from keras.callbacks import Callback
+from keras.callbacks import Callback, EarlyStopping
 from keras import backend as K
 from pandas import DataFrame
 import numpy as np
@@ -22,10 +22,27 @@ class RLN(BaseModel):
         build_fn = self.RLN_Model(layers=self.params["layers"], norm=self.params["norm"],
                                   avg_reg=self.params["theta"], learning_rate=lr)
 
+        arguments = {
+            'build_fn': build_fn,
+            'epochs': args.epochs,
+            'batch_size': self.params["batch_size"],
+            'verbose': 1,
+        }
+
         if args.objective == "regression":
-            self.model = KerasRegressor(build_fn=build_fn, epochs=20, batch_size=self.params["batch_size"], verbose=1)
+            self.model = KerasRegressor(**arguments)
         else:
-            self.model = KerasClassifier(build_fn=build_fn, epochs=20, batch_size=self.params["batch_size"], verbose=1)
+            self.model = KerasClassifier(**arguments)
+
+    def fit(self, X, y, X_val=None, y_val=None):
+        X = np.asarray(X).astype('float32')
+        X_val = np.asarray(X_val).astype('float32')
+        self.model.fit(X, y, validation_data=(X_val, y_val))
+        # Early Stopping has to be defined in the RLN_Model methode
+
+    def predict(self, X):
+        X = np.asarray(X).astype('float32')
+        return super().predict(X)
 
     def save_model(self, filename_extension="", directory="models"):
         filename = get_output_path(self.args, directory=directory, filename="m", extension=filename_extension,
@@ -61,7 +78,10 @@ class RLN(BaseModel):
             orig_fit = model.fit
 
             def rln_fit(*args, **fit_kwargs):
-                orig_callbacks = fit_kwargs.get('callbacks', [])
+                # orig_callbacks = fit_kwargs.get('callbacks', [])
+                # Has to be set in here or Keras will crash...
+                orig_callbacks = [EarlyStopping(patience=self.args.early_stopping_rounds)]
+
                 rln_callbacks = orig_callbacks + [rln_callback]
                 return orig_fit(*args, callbacks=rln_callbacks, **fit_kwargs)
 

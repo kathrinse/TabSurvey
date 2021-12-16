@@ -15,16 +15,15 @@ class VIME(BaseModel):
     def __init__(self, params, args):
         super().__init__(params, args)
 
-        self.batch_size = 128
+        self.batch_size = self.params["batch_size"]
 
         self.device = torch.device('cuda' if args.use_gpu and torch.cuda.is_available() else 'cpu')
-        print("On Device:", self.device)
+        # print("On Device:", self.device)
 
         self.model_self = VIMESelf(args.num_features).to(self.device)
         self.model_semi = VIMESemi(args, args.num_features, args.num_classes).to(self.device)
 
     def fit(self, X, y, X_val=None, y_val=None):
-        # For some reason this has to be set explicitly to work with categorical data
         X = np.array(X, dtype=np.float)
         X_val = np.array(X_val, dtype=np.float)
 
@@ -49,12 +48,27 @@ class VIME(BaseModel):
 
         with torch.no_grad():
             for batch_X in test_loader:
-                X_encoded = torch.sigmoid(self.model_self.input_layer(batch_X[0].to(self.device)))
+                X_encoded = self.model_self.input_layer(batch_X[0].to(self.device))
                 preds = self.model_semi(X_encoded)
-                self.predictions.append(preds)
+
+                if self.args.objective == "binary":
+                    preds = torch.sigmoid(preds)
+
+                self.predictions.append(preds.detach().cpu().numpy())
 
         self.predictions = np.concatenate(self.predictions)
         return self.predictions
+
+    @classmethod
+    def define_trial_parameters(cls, trial, args):
+        params = {
+            "p_m": trial.suggest_float("p_m", 0.1, 0.9),
+            "alpha": trial.suggest_float("alpha", 0.1, 10),
+            "K": trial.suggest_categorical("K", [2, 3, 5, 10, 15, 20]),
+            "beta": trial.suggest_float("beta", 0.1, 10),
+            "batch_size": trial.suggest_categorical("batch_size", [64, 128, 256, 512])
+        }
+        return params
 
     def fit_self(self, X, p_m=0.3, alpha=2):
         optimizer = optim.RMSprop(self.model_self.parameters(), lr=0.001)
@@ -83,8 +97,9 @@ class VIME(BaseModel):
                 loss.backward()
                 optimizer.step()
 
-    def fit_semi(self, X, y, x_unlab, X_val=None, y_val=None, p_m=0.3, K=3, beta=1):
+        print("Fitted encoder")
 
+    def fit_semi(self, X, y, x_unlab, X_val=None, y_val=None, p_m=0.3, K=3, beta=1):
         X = torch.tensor(X).float()
         y = torch.tensor(y)
         x_unlab = torch.tensor(x_unlab).float()
@@ -98,7 +113,7 @@ class VIME(BaseModel):
             y_val = y_val.float()
         elif self.args.objective == "classification":
             loss_func_supervised = nn.CrossEntropyLoss()
-        elif self.args.objective == "binary":
+        else:
             loss_func_supervised = nn.BCEWithLogitsLoss()
             y = y.float()
             y_val = y_val.float()
@@ -112,11 +127,10 @@ class VIME(BaseModel):
         val_dataset = TensorDataset(X_val, y_val)
         val_loader = DataLoader(dataset=val_dataset, batch_size=self.batch_size, shuffle=True)
 
-        val_dim = y_val.shape[0]
         min_val_loss = float("inf")
         min_val_loss_idx = 0
 
-        for epoch in range(1000):
+        for epoch in range(self.args.epochs):
             for i, (batch_X, batch_y, batch_unlab) in enumerate(train_loader):
 
                 batch_X_encoded = self.model_self.input_layer(batch_X.to(self.device))
@@ -144,6 +158,7 @@ class VIME(BaseModel):
 
                 # Early Stopping
                 val_loss = 0.0
+                val_dim = 0
                 for val_i, (batch_val_X, batch_val_y) in enumerate(val_loader):
                     batch_val_X_encoded = self.model_self.input_layer(batch_val_X.to(self.device))
                     y_hat = self.model_semi(batch_val_X_encoded)
@@ -152,8 +167,11 @@ class VIME(BaseModel):
                         y_hat = y_hat.squeeze()
 
                     val_loss += loss_func_supervised(y_hat, batch_val_y.to(self.device))
+                    val_dim += 1
 
                 val_loss /= val_dim
+
+                print("Epoch %d, step % i, Loss: %.5f, Val Loss: %.5f" % (epoch, i, loss, val_loss))
 
                 current_idx = (i + 1) * (epoch + 1)
 
@@ -186,16 +204,6 @@ class VIME(BaseModel):
                                         file_type="pt")
         state_dict = torch.load(filename_semi)
         self.model_semi.load_state_dict(state_dict)
-
-    @classmethod
-    def define_trial_parameters(cls, trial, args):
-        params = {
-            "p_m": trial.suggest_float("p_m", 0.1, 0.9),
-            "alpha": trial.suggest_float("alpha", 0.1, 10),
-            "K": trial.suggest_categorical("K", [2, 3, 5, 10, 15, 20]),
-            "beta": trial.suggest_float("beta", 0.1, 10)
-        }
-        return params
 
 
 class VIMESelf(nn.Module):

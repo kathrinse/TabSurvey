@@ -30,10 +30,16 @@ class SAINT(BaseModel):
             num_idx = list(range(args.num_features))
             cat_dims = np.array([1])
 
+        # Decreasing some hyperparameter to cope with memory issues
+        dim = self.params["dim"] if args.num_features < 50 else 8
+        self.batch_size = self.params["batch_size"] if args.num_features < 50 else 64
+
+        print("Using dim %d and batch size %d" % (dim, self.batch_size))
+
         self.model = SAINTModel(
             categories=tuple(cat_dims),
             num_continuous=len(num_idx),
-            dim=self.params["dim"],
+            dim=dim,
             dim_out=1,
             depth=self.params["depth"],  # 6
             heads=self.params["heads"],  # 8
@@ -68,7 +74,7 @@ class SAINT(BaseModel):
         y_val = {'data': y_val.reshape(-1, 1)}
 
         train_ds = DataSetCatCon(X, y, self.args.cat_idx, self.args.objective)
-        trainloader = DataLoader(train_ds, batch_size=self.params["batch_size"], shuffle=True, num_workers=4)
+        trainloader = DataLoader(train_ds, batch_size=self.batch_size, shuffle=True, num_workers=4)
 
         val_ds = DataSetCatCon(X_val, y_val, self.args.cat_idx, self.args.objective)
         valloader = DataLoader(val_ds, batch_size=512, shuffle=True, num_workers=4)
@@ -76,7 +82,7 @@ class SAINT(BaseModel):
         min_val_loss = float("inf")
         min_val_loss_idx = 0
 
-        for epoch in range(1):  # self.args.epochs
+        for epoch in range(self.args.epochs):
             self.model.train()
 
             for i, data in enumerate(trainloader, 0):
@@ -113,7 +119,7 @@ class SAINT(BaseModel):
                 loss.backward()
                 optimizer.step()
 
-                #print("Loss", loss.item())
+                # print("Loss", loss.item())
 
             # Early Stopping
             val_loss = 0.0
@@ -204,10 +210,10 @@ class SAINT(BaseModel):
     @classmethod
     def define_trial_parameters(cls, trial, args):
         params = {
-            "dim": trial.suggest_categorical("dim", [8]),  # 32, 64, 128, 256
+            "dim": trial.suggest_categorical("dim", [32, 64, 128, 256]),
             "depth": trial.suggest_categorical("depth", [1, 2, 3, 6, 12]),
             "heads": trial.suggest_categorical("heads", [2, 4, 8]),
             "dropout": trial.suggest_categorical("dropout", [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]),
-            "batch_size": trial.suggest_categorical("batch_size", [64])  # 128, 256, 512
+            "batch_size": trial.suggest_categorical("batch_size", [64, 128, 256, 512])
         }
         return params

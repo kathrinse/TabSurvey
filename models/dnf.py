@@ -29,6 +29,8 @@ class DNFNet(BaseModel):
             'input_dim': args.num_features,
             'output_dim': args.num_classes,
             'translate_label_to_one_hot': True if args.objective == "classification" else False,
+            'epochs': args.epochs,
+            'early_stopping_patience': args.early_stopping_rounds,
             **self.params
         })
 
@@ -36,9 +38,6 @@ class DNFNet(BaseModel):
             'score_metric': log_loss,
             'score_increases': False,
         })
-
-        print(self.config)
-        print(self.score_config)
 
         os.environ["CUDA_VISIBLE_DEVICES"] = self.config['GPU']
         tf.reset_default_graph()
@@ -50,15 +49,9 @@ class DNFNet(BaseModel):
                                                                                            return_sub_dirs=True)
         self.model = create_model(self.config, models_module_name=self.config['models_module_name'])
 
-        print("Weights dir", self.weights_dir)
-
-        print(self.model)
-
         self.model_handler = None
 
     def fit(self, X, y, X_val=None, y_val=None):
-        print("Fitting...")
-
         train_generator = NumpyGenerator(X, y, self.config['output_dim'],
                                          self.config['batch_size'],
                                          translate_label_to_one_hot=self.config['translate_label_to_one_hot'],
@@ -85,12 +78,9 @@ class DNFNet(BaseModel):
         print("Epoch", epoch)
 
     def predict(self, X):
-        print("Predicting...")
-
         assert os.path.exists(self.weights_dir + '/model_weights.ckpt.meta')
 
         if os.path.exists(self.weights_dir + '/model_weights.ckpt.meta'):
-            print('Loading weights')
             saver = tf.train.Saver(tf.global_variables())
             saver.restore(self.model_handler.sess, self.weights_dir + '/model_weights.ckpt')
 
