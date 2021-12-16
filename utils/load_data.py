@@ -60,10 +60,10 @@ def load_data(args):
         y = df[label].to_numpy()
 
     elif args.dataset == "HIGGS":  # Binary classification dataset with categorical data
-        path = "/home/vadim/Documents/Projects/2021/DeepTLF/data/HIGGS.csv.gz"
+        path = "/opt/notebooks/data/HIGGS.csv.gz"
         df = pd.read_csv(path, header=None)
         df.columns = ['x' + str(i) for i in range(df.shape[1])]
-        num_col = list(df.drop('x21', 1).columns)
+        num_col = list(df.drop(['x0', 'x21'], 1).columns)
         cat_col = ['x21']
         label_col = 'x0'
 

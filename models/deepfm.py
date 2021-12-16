@@ -1,12 +1,11 @@
 from models.basemodel import BaseModel
 
 import torch
-import tensorflow as tf
 
 import numpy as np
 
-from deepctr_torch.models.deepfm import DeepFM as DeepFMModel
-from deepctr_torch.inputs import SparseFeat, DenseFeat
+from .deepfm_lib.models.deepfm import DeepFM as DeepFMModel
+from .deepfm_lib.inputs import SparseFeat, DenseFeat
 
 from utils.io_utils import get_output_path
 
@@ -49,9 +48,11 @@ class DeepFM(BaseModel):
         if self.args.objective == "binary":
             loss = "binary_crossentropy"
             metric = "binary_crossentropy"
+            labels = [0, 1]
         elif self.args.objective == "regression":
             loss = "mse"
             metric = "mse"
+            labels = None
 
         self.model.compile(optimizer=torch.optim.AdamW(self.model.parameters()),
                            loss=loss, metrics=[metric])
@@ -62,9 +63,8 @@ class DeepFM(BaseModel):
             X_val_dict["dummy"] = np.zeros(X_val.shape[0])
 
         self.model.fit(X_dict, y, batch_size=self.params["batch_size"], epochs=self.args.epochs,
-                       validation_data=(X_val_dict, y_val),
-                       callbacks=[tf.keras.callbacks.EarlyStopping(monitor="val_" + metric, verbose=1,
-                                                                   patience=self.args.early_stopping_rounds)])
+                       validation_data=(X_val_dict, y_val), labels=labels, early_stopping=True,
+                       patience=self.args.early_stopping_rounds)
 
     def predict(self, X):
         X = np.array(X, dtype=np.float)
