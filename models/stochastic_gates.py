@@ -1,6 +1,6 @@
 from models.basemodel import BaseModel
 
-from stg import STG as STGModel
+from .stg_lib import STG as STGModel
 
 import torch
 import numpy as np
@@ -14,7 +14,7 @@ class STG(BaseModel):
     def __init__(self, params, args):
         super().__init__(params, args)
 
-        self.device = torch.device("cuda" if torch.cuda.is_available() and args.use_gpu else "cpu")
+        self.device = "cuda" if torch.cuda.is_available() and args.use_gpu else "cpu"
 
         task = "classification" if self.args.objective == "binary" else self.args.objective
         out_dim = 2 if self.args.objective == "binary" else self.args.num_classes
@@ -31,21 +31,10 @@ class STG(BaseModel):
             y, y_val = y.reshape(-1, 1), y_val.reshape(-1, 1)
 
         self.model.fit(X, y, nr_epochs=self.args.epochs, valid_X=X_val, valid_y=y_val,
-                       print_interval=self.args.logging_period)  # early_stop=True self.args.epochs
+                       print_interval=self.args.logging_period)  # early_stop=True
 
     def predict(self, X):
-        # This great implementation doesn't want the predictions to be computed on the GPU...
-        self.model._model.to("cpu")
-        pred = self.model.predict(X).reshape(-1, 1)
-
-        # Predict only gives the final predictions and not the needed probabilities!
-        # Making this for the scorer to work anyway. But should be changed...
-        if self.args.objective == "classification":
-            categories = np.arange(self.args.num_classes).reshape(1, -1)
-            oe = OneHotEncoder(categories=categories)
-            pred = oe.fit_transform(pred).toarray()
-
-        self.predictions = pred
+        self.predictions = self.model.predict(X)
         return self.predictions
 
     def save_model(self, filename_extension="", directory="models"):
