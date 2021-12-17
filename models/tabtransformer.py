@@ -2,13 +2,12 @@ import torch
 import torch.optim as optim
 from torch.utils.data import TensorDataset, DataLoader
 
-from models.basemodel import BaseModel
-from utils.io_utils import get_output_path
+from models.basemodel_torch import BaseModelTorch
 
 import numpy as np
 
 
-class TabTransformer(BaseModel):
+class TabTransformer(BaseModelTorch):
 
     def __init__(self, params, args):
         super().__init__(params, args)
@@ -22,12 +21,11 @@ class TabTransformer(BaseModel):
             num_continuous = args.num_features
             categories_unique = ()
 
-        self.device = torch.device('cuda' if args.use_gpu and torch.cuda.is_available() else 'cpu')
         print("On Device:", self.device)
 
         # Decreasing some hyperparameter to cope with memory issues
         dim = self.params["dim"] if args.num_features < 50 else 8
-        self.batch_size = self.params["batch_size"] if args.num_features < 50 else 64
+        self.batch_size = self.args.batch_size if args.num_features < 50 else 64
 
         print("Using dim %d and batch size %d" % (dim, self.batch_size))
 
@@ -75,11 +73,13 @@ class TabTransformer(BaseModel):
                                   num_workers=2)
 
         val_dataset = TensorDataset(X_val, y_val)
-        val_loader = DataLoader(dataset=val_dataset, batch_size=512, shuffle=True)
+        val_loader = DataLoader(dataset=val_dataset, batch_size=self.args.val_batch_size, shuffle=True)
 
-        val_dim = y_val.shape[0]
         min_val_loss = float("inf")
         min_val_loss_idx = 0
+
+        loss_history = []
+        val_loss_history = []
 
         for epoch in range(self.args.epochs):
             for i, (batch_X, batch_y) in enumerate(train_loader):
@@ -97,45 +97,49 @@ class TabTransformer(BaseModel):
                     out = out.squeeze()
 
                 loss = loss_func(out, batch_y.to(self.device))
+                loss_history.append(loss)
 
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
 
-                # Early Stopping
-                val_loss = 0.0
-                for val_i, (batch_val_X, batch_val_y) in enumerate(val_loader):
+            # Early Stopping
+            val_loss = 0.0
+            val_dim = 0
+            for val_i, (batch_val_X, batch_val_y) in enumerate(val_loader):
 
-                    if self.args.cat_idx:
-                        x_categ = batch_val_X[:, self.args.cat_idx].int().to(self.device)
-                    else:
-                        x_categ = None
+                if self.args.cat_idx:
+                    x_categ = batch_val_X[:, self.args.cat_idx].int().to(self.device)
+                else:
+                    x_categ = None
 
-                    x_cont = batch_val_X[:, self.num_idx].to(self.device)
+                x_cont = batch_val_X[:, self.num_idx].to(self.device)
 
-                    out = self.model(x_categ, x_cont)
+                out = self.model(x_categ, x_cont)
 
-                    if self.args.objective == "regression" or self.args.objective == "binary":
-                        out = out.squeeze()
+                if self.args.objective == "regression" or self.args.objective == "binary":
+                    out = out.squeeze()
 
-                    val_loss += loss_func(out, batch_val_y.to(self.device))
-                val_loss /= val_dim
+                val_loss += loss_func(out, batch_val_y.to(self.device))
+                val_dim += 1
+            val_loss /= val_dim
+            val_loss_history.append(val_loss)
 
-                print("Epoch %d: Val Loss %.5f" % (epoch, val_loss))
+            print("Epoch %d: Val Loss %.5f" % (epoch, val_loss))
 
-                current_idx = (i + 1) * (epoch + 1)
+            if val_loss < min_val_loss:
+                min_val_loss = val_loss
+                min_val_loss_idx = epoch
 
-                if val_loss < min_val_loss:
-                    min_val_loss = val_loss
-                    min_val_loss_idx = current_idx
+                # Save the currently best model
+                self.save_model(filename_extension="best", directory="tmp")
 
-                    # Save the currently best model
-                    self.save_model(filename_extension="best", directory="tmp")
+            if min_val_loss_idx + self.args.early_stopping_rounds < epoch:
+                print("Validation loss has not improved for %d steps!" % self.args.early_stopping_rounds)
+                print("Early stopping applies.")
+                break
 
-                if min_val_loss_idx + self.args.early_stopping_rounds < current_idx:
-                    # print("Validation loss has not improved for %d steps!" % self.args.early_stopping_rounds)
-                    # print("Early stopping applies.")
-                    return
+        return loss_history, val_loss_history
 
     def predict(self, X):
 
@@ -147,7 +151,8 @@ class TabTransformer(BaseModel):
         X = torch.tensor(X).float()
 
         test_dataset = TensorDataset(X)
-        test_loader = DataLoader(dataset=test_dataset, batch_size=512, shuffle=True, num_workers=2)
+        test_loader = DataLoader(dataset=test_dataset, batch_size=self.args.val_batch_size, shuffle=False,
+                                 num_workers=2)
 
         self.predictions = []
 
@@ -166,17 +171,6 @@ class TabTransformer(BaseModel):
         self.predictions = np.concatenate(self.predictions)
         return self.predictions
 
-    def save_model(self, filename_extension="", directory="models"):
-        filename = get_output_path(self.args, directory=directory, filename="m", extension=filename_extension,
-                                   file_type="pt")
-        torch.save(self.model.state_dict(), filename)
-
-    def load_model(self, filename_extension="", directory="models"):
-        filename = get_output_path(self.args, directory=directory, filename="m", extension=filename_extension,
-                                   file_type="pt")
-        state_dict = torch.load(filename)
-        self.model.load_state_dict(state_dict)
-
     @classmethod
     def define_trial_parameters(cls, trial, args):
         params = {
@@ -186,7 +180,6 @@ class TabTransformer(BaseModel):
             "weight_decay": trial.suggest_int("weight_decay", -6, -1),  # x = 10 ^ u
             "learning_rate": trial.suggest_int("learning_rate", -6, -3),  # x = 10 ^ u
             "dropout": trial.suggest_categorical("dropout", [0, 0.1, 0.2, 0.3, 0.4, 0.5]),
-            "batch_size": trial.suggest_categorical("batch_size", [64, 128, 256, 512])
         }
         return params
 

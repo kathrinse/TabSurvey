@@ -4,7 +4,7 @@ from models import str2model
 from utils.load_data import load_data
 from utils.scorer import get_scorer
 from utils.timer import Timer
-from utils.io_utils import save_results_to_file, save_hyperparameters_to_file
+from utils.io_utils import save_results_to_file, save_hyperparameters_to_file, save_loss_to_file
 from utils.parser import get_parser
 
 from sklearn.model_selection import KFold, StratifiedKFold  # , train_test_split
@@ -33,7 +33,7 @@ def cross_validation(model, X, y, args, save_model=False):
 
         # Train model
         train_timer.start()
-        curr_model.fit(X_train, y_train, X_test, y_test)  # X_val, y_val)
+        loss_history, val_loss_history = curr_model.fit(X_train, y_train, X_test, y_test)  # X_val, y_val)
         train_timer.end()
 
         # Test model
@@ -45,8 +45,13 @@ def cross_validation(model, X, y, args, save_model=False):
         if save_model:
             curr_model.save_model_and_predictions(y_test, i)
 
+            save_loss_to_file(args, loss_history, "loss", extension=i)
+            save_loss_to_file(args, val_loss_history, "val_loss", extension=i)
+
         # Compute scores on the output
         sc.eval(y_test, predictions)
+
+        print(sc.get_results())
 
     # Best run is saved to file
     if save_model:

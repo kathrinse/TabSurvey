@@ -1,8 +1,9 @@
 # General parameters
 dataset: CaliforniaHousing
-model_name: LinearModel # LinearModel, KNN, SVM, DecisionTree, RandomForest, MLP
+model_name: STG # LinearModel, KNN, SVM, DecisionTree, RandomForest, MLP
                            # XGBoost, CatBoost, LightGBM,
-                           # TabNet, VIME, TabTransformer, ModelTree, NODE, DeepGBM, RLN, DNFNet, STG, NAM, DeepFM
+                           # TabNet, VIME, TabTransformer, ModelTree, NODE, DeepGBM, RLN, DNFNet,
+                           # STG, NAM, DeepFM, SAINT
 objective: regression
 
 # GPU parameters
@@ -23,6 +24,8 @@ scale: 'true'
 target_encode: 'false'
 
 # Training parameters
+batch_size: 128
+val_batch_size: 256
 early_stopping_rounds: 20
 epochs: 1000
 logging_period: 100

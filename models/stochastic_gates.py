@@ -1,20 +1,14 @@
-from models.basemodel import BaseModel
+from .basemodel_torch import BaseModelTorch
 
 from .stg_lib import STG as STGModel
 
 import torch
-import numpy as np
-from sklearn.preprocessing import OneHotEncoder
-
-from utils.io_utils import get_output_path
 
 
-class STG(BaseModel):
+class STG(BaseModelTorch):
 
     def __init__(self, params, args):
         super().__init__(params, args)
-
-        self.device = "cuda" if torch.cuda.is_available() and args.use_gpu else "cpu"
 
         task = "classification" if self.args.objective == "binary" else self.args.objective
         out_dim = 2 if self.args.objective == "binary" else self.args.num_classes
@@ -33,14 +27,12 @@ class STG(BaseModel):
         self.model.fit(X, y, nr_epochs=self.args.epochs, valid_X=X_val, valid_y=y_val,
                        print_interval=self.args.logging_period)  # early_stop=True
 
+        # Not so easy tracking the loss here
+        return [], []
+
     def predict(self, X):
         self.predictions = self.model.predict(X)
         return self.predictions
-
-    def save_model(self, filename_extension="", directory="models"):
-        filename = get_output_path(self.args, directory=directory, filename="m", extension=filename_extension,
-                                   file_type="pt")
-        self.model.save_checkpoint(filename)
 
     @classmethod
     def define_trial_parameters(cls, trial, args):

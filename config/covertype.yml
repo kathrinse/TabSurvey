@@ -1,7 +1,7 @@
 # General parameters
 dataset: Covertype
-model_name: DeepFM # LinearModel, KNN, SVM, DecisionTree, RandomForest, XGBoost, CatBoost, LightGBM,
-    # ModelTree, TabNet, VIME, TabTransformer, RLN, DNFNet, STG, NAM
+model_name: STG # LinearModel, KNN, SVM, DecisionTree, RandomForest, XGBoost, CatBoost, LightGBM,
+    # ModelTree, TabNet, VIME, TabTransformer, RLN, DNFNet, STG, NAM, DeepFM, SAINT
 objective: classification # Don't change
 
 # GPU parameters
@@ -22,6 +22,8 @@ scale: 'true'
 target_encode: 'true'
 
 # Training parameters
+batch_size: 128
+val_batch_size: 256
 early_stopping_rounds: 20
 epochs: 1000
 logging_period: 100

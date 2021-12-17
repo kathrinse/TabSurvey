@@ -440,12 +440,12 @@ def fetch_CLICK(path, valid_size=100_000, validation_seed=None):
 
 
 DATASETS = {
-    'A9A': fetch_A9A,
-    'EPSILON': fetch_EPSILON,
-    'PROTEIN': fetch_PROTEIN,
-    'YEAR': fetch_YEAR,
-    'HIGGS': fetch_HIGGS,
-    'MICROSOFT': fetch_MICROSOFT,
-    'YAHOO': fetch_YAHOO,
-    'CLICK': fetch_CLICK,
+    #'A9A': fetch_A9A,
+    #'EPSILON': fetch_EPSILON,
+    #'PROTEIN': fetch_PROTEIN,
+    #'YEAR': fetch_YEAR,
+    #'HIGGS': fetch_HIGGS,
+    #'MICROSOFT': fetch_MICROSOFT,
+    #'YAHOO': fetch_YAHOO,
+    #'CLICK': fetch_CLICK,
 }

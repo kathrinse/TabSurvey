@@ -1,8 +1,8 @@
 import time
 
 from models import node_lib
+from models.basemodel_torch import BaseModelTorch
 from models.node_lib.utils import check_numpy, process_in_chunks
-from models.basemodel import BaseModel
 
 import torch
 import torch.nn as nn
@@ -14,12 +14,10 @@ import numpy as np
 from utils.io_utils import get_output_path
 
 
-class NODE(BaseModel):
+class NODE(BaseModelTorch):
 
     def __init__(self, params, args):
         super().__init__(params, args)
-
-        self.device = torch.device('cuda' if args.use_gpu and torch.cuda.is_available() else 'cpu')
 
         layer_dim = int(self.params["total_tree_count"] / self.params["num_layers"])
 
@@ -82,12 +80,16 @@ class NODE(BaseModel):
         best_loss = float('inf')
         best_step_loss = 0
 
+        loss_history = []
+        val_loss_history = []
+
         early_stopping = self.args.early_stopping_rounds + self.args.logging_period
 
         for batch in node_lib.iterate_minibatches(data.X_train, data.y_train, batch_size=64, shuffle=True,
                                                   epochs=self.args.epochs):
 
             metrics = self.trainer.train_on_batch(*batch, device=self.device)
+            loss_history.append(metrics['loss'])
 
             if self.trainer.step % self.args.logging_period == 0:
                 self.trainer.save_checkpoint()
@@ -97,15 +99,22 @@ class NODE(BaseModel):
                 print("Loss %.5f" % (metrics['loss']))
 
                 if self.args.objective == "regression":
-                    loss = self.trainer.evaluate_mse(data.X_valid, data.y_valid, device=self.device, batch_size=128)
+                    loss = self.trainer.evaluate_mse(data.X_valid, data.y_valid, device=self.device,
+                                                     batch_size=self.args.batch_size)
                     print("Val MSE: %0.5f" % loss)
                 elif self.args.objective == "classification":
-                    loss = self.trainer.evaluate_logloss(data.X_valid, data.y_valid, device=self.device, batch_size=128)
+                    loss = self.trainer.evaluate_logloss(data.X_valid, data.y_valid, device=self.device,
+                                                         batch_size=self.args.batch_size)
                     print("Val LogLoss: %0.5f" % loss)
                 elif self.args.objective == "binary":
-                    auc = self.trainer.evaluate_auc(data.X_valid, data.y_valid, device=self.device, batch_size=128)
-                    print("Val AUC: %0.5f" % auc)
-                    loss = 1 - auc  # loss has to decrease, auc would increase
+                    loss = self.trainer.evaluate_binarylogloss(data.X_valid, data.y_valid, device=self.device,
+                                                              batch_size=self.args.batch_size)
+                    #print("Val AUC: %0.5f" % auc)
+                    #loss = 1 - auc  # loss has to decrease, auc would increase
+
+                print("Val Loss: %0.5f" % loss)
+
+                val_loss_history.append(loss)
 
                 if loss < best_loss:
                     best_loss = loss
@@ -121,12 +130,14 @@ class NODE(BaseModel):
                 print("Best Val Loss: %0.5f" % best_loss)
                 break
 
+        return loss_history, val_loss_history
+
     def predict(self, X):
         self.trainer.load_checkpoint(tag="best")
         X_test = torch.as_tensor(np.array(X, dtype=np.float), device=self.device, dtype=torch.float32)
         self.model.train(False)
         with torch.no_grad():
-            prediction = process_in_chunks(self.model, X_test, batch_size=128)
+            prediction = process_in_chunks(self.model, X_test, batch_size=self.args.val_batch_size)
 
             if self.args.objective == "classification":
                 prediction = F.softmax(prediction, dim=1)

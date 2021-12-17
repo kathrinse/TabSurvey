@@ -18,6 +18,9 @@ class BaseModel:
     def fit(self, X, y, X_val=None, y_val=None):
         self.model.fit(X, y)
 
+        # Should return loss history and validation loss history, but sklearn does not provide those
+        return [], []
+
     def predict(self, X):
         if self.args.objective == "regression":
             self.predictions = self.model.predict(X)

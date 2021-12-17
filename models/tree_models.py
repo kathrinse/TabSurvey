@@ -44,6 +44,8 @@ class XGBoost(BaseModel):
                                early_stopping_rounds=self.args.early_stopping_rounds,
                                verbose_eval=self.args.logging_period)
 
+        return [], []
+
     def predict(self, X):
         test = xgb.DMatrix(X)
         self.predictions = self.model.predict(test)
@@ -94,6 +96,8 @@ class CatBoost(BaseModel):
     def fit(self, X, y, X_val=None, y_val=None):
         self.model.fit(X, y, eval_set=(X_val, y_val))
 
+        return [], []
+
     @classmethod
     def define_trial_parameters(cls, trial, args):
         params = {
@@ -134,6 +138,8 @@ class LightGBM(BaseModel):
                                valid_names=["eval"], callbacks=[lgb.early_stopping(self.args.early_stopping_rounds),
                                                                 lgb.log_evaluation(self.args.logging_period)],
                                categorical_feature=self.args.cat_idx)
+
+        return [], []
 
     def predict(self, X):
         # Predicts probabilities if the task is classification

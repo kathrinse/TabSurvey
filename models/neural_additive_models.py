@@ -1,21 +1,20 @@
 import numpy as np
 import torch.utils.data
 
-from models.basemodel import BaseModel
-
-from utils.io_utils import get_output_path
-
 from nam.config import defaults
 from nam.models import NAM as NAMModel
 from nam.trainer import LitNAM
 
 import pytorch_lightning as pl
+from pytorch_lightning import Callback
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.loggers import TensorBoardLogger
 
+from models.basemodel_torch import BaseModelTorch
 
-class NAM(BaseModel):
+
+class NAM(BaseModelTorch):
 
     def __init__(self, params, args):
         super().__init__(params, args)
@@ -26,12 +25,11 @@ class NAM(BaseModel):
             sys.exit(0)
 
         regression = True if self.args.objective == "regression" else False
-        device = "gpu" if self.args.use_gpu and torch.cuda.is_available() else 'cpu'
 
         self.config = defaults()
         self.config.update(regression=regression, num_epochs=self.args.epochs,
                            early_stopping_patience=self.args.early_stopping_rounds,
-                           device=device, **self.params)
+                           device=self.device, **self.params)
 
         print(self.config)
 
@@ -40,7 +38,7 @@ class NAM(BaseModel):
         X_val = np.array(X_val, dtype=np.float)
 
         dataset = torch.utils.data.TensorDataset(torch.tensor(X).float(), torch.tensor(y).float())
-        trainloader = torch.utils.data.DataLoader(dataset, batch_size=self.config.batch_size, shuffle=True)
+        trainloader = torch.utils.data.DataLoader(dataset, batch_size=self.args.batch_size, shuffle=True)
 
         num_unique_vals = [len(np.unique(X[:, i])) for i in range(X.shape[1])]
         num_units = [min(self.config.num_basis_functions, i * self.config.units_multiplier) for i in num_unique_vals]
@@ -53,7 +51,7 @@ class NAM(BaseModel):
         )
 
         val_dataset = torch.utils.data.TensorDataset(torch.tensor(X_val).float(), torch.tensor(y_val).float())
-        valloader = torch.utils.data.DataLoader(val_dataset, batch_size=self.config.batch_size, shuffle=False,
+        valloader = torch.utils.data.DataLoader(val_dataset, batch_size=self.args.val_batch_size, shuffle=False,
                                                 num_workers=2)
 
         # Folder hack
@@ -64,16 +62,22 @@ class NAM(BaseModel):
                                               save_top_k=self.config.save_top_k,
                                               mode='min')
 
+        metrics_callback = MetricsCallback()
+
         litmodel = LitNAM(self.config, self.model)
-        trainer = pl.Trainer(logger=tb_logger,  max_epochs=1,  # self.config.num_epochs
+        trainer = pl.Trainer(logger=tb_logger,  max_epochs=self.config.num_epochs,
                              enable_checkpointing=checkpoint_callback,  # checkpoint_callback
-                             callbacks=[EarlyStopping(monitor='val_loss', patience=self.args.early_stopping_rounds)])
+                             callbacks=[EarlyStopping(monitor='val_loss', patience=self.args.early_stopping_rounds),
+                                        metrics_callback],
+                             gpus=self.gpus)
         trainer.fit(litmodel, train_dataloaders=trainloader, val_dataloaders=valloader)
+
+        return metrics_callback.train_loss, metrics_callback.val_loss
 
     def predict(self, X):
         X = np.array(X, dtype=np.float)
         test_dataset = torch.utils.data.TensorDataset(torch.tensor(X).float())
-        testloader = torch.utils.data.DataLoader(test_dataset, batch_size=self.config.batch_size, shuffle=False)
+        testloader = torch.utils.data.DataLoader(test_dataset, batch_size=self.args.val_batch_size, shuffle=False)
 
         self.model.eval()
 
@@ -90,11 +94,6 @@ class NAM(BaseModel):
         self.predictions = np.concatenate(self.predictions).reshape(-1, 1)
         return self.predictions
 
-    def save_model(self, filename_extension="", directory="models"):
-        filename = get_output_path(self.args, directory=directory, filename="m", extension=filename_extension,
-                                   file_type="pt")
-        torch.save(self.model.state_dict(), filename)
-
     @classmethod
     def define_trial_parameters(cls, trial, args):
         params = {
@@ -103,8 +102,24 @@ class NAM(BaseModel):
             # 'l2_regularization': trial.suggest_float('l2_regularization', 0.000001, 0.0001, log=True),
             'dropout': trial.suggest_float('dropout', 0, 0.9),
             'feature_dropout': trial.suggest_float('feature_dropout', 0, 0.2),
-            'batch_size': trial.suggest_categorical('batch_size', [64, 128, 256, 512])
         }
         return params
 
 # l2_regularization=0.1,  hidden_sizes=[], activation='exu'
+
+
+class MetricsCallback(Callback):
+    """PyTorch Lightning metric callback."""
+
+    def __init__(self):
+        super().__init__()
+        self.train_loss = []
+        self.val_loss = []
+
+    def on_validation_epoch_end(self, trainer, pl_module):
+        metrics_dict = trainer.callback_metrics
+
+        if "train_loss" in metrics_dict:
+            self.train_loss.append(metrics_dict["train_loss"])
+            self.val_loss.append(metrics_dict["val_loss"])
+

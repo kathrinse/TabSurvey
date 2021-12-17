@@ -97,9 +97,9 @@ class BaseModel(nn.Module):
         self.aux_loss = torch.zeros((1,), device=device)
         self.device = device
         self.gpus = gpus
-        if gpus and str(self.gpus[0]) not in self.device:
-            raise ValueError(
-                "`gpus[0]` should be the same gpu with `device`")
+        #if gpus and str(self.gpus[0]) not in self.device:
+         #   raise ValueError(
+         #       "`gpus[0]` should be the same gpu with `device`")
 
         self.feature_index = build_input_features(
             linear_feature_columns + dnn_feature_columns)
@@ -208,6 +208,9 @@ class BaseModel(nn.Module):
         min_loss = float('inf')
         min_loss_step = 0
 
+        loss_history = []
+        val_loss_history = []
+
         # Train
         print("Train on {0} samples, validate on {1} samples, {2} steps per epoch".format(
             len(train_tensor_data), len(val_y), steps_per_epoch))
@@ -281,6 +284,9 @@ class BaseModel(nn.Module):
                                     ": {0: .4f}".format(epoch_logs["val_" + name])
                 print(eval_str)
 
+            loss_history.append(epoch_logs['loss'])
+            val_loss_history.append(epoch_logs["val_" + next(iter(self.metrics))])
+
             if early_stopping:
                 # Take first metric for early stopping
                 name = next(iter(self.metrics))
@@ -293,7 +299,9 @@ class BaseModel(nn.Module):
                 if min_loss_step + patience < epoch:
                     print("Validation loss has not improved for %d steps!" % patience)
                     print("Early stopping applies.")
-                    return
+                    break
+
+        return loss_history, val_loss_history
 
     def evaluate(self, x, y, batch_size=256):
         """

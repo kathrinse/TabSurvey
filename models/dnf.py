@@ -77,6 +77,8 @@ class DNFNet(BaseModel):
         print("Val score:", val_score)
         print("Epoch", epoch)
 
+        return [], []
+
     def predict(self, X):
         assert os.path.exists(self.weights_dir + '/model_weights.ckpt.meta')
 

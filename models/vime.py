@@ -6,19 +6,14 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import TensorDataset, DataLoader
 
-from models.basemodel import BaseModel
+from models.basemodel_torch import BaseModelTorch
 from utils.io_utils import get_output_path
 
 
-class VIME(BaseModel):
+class VIME(BaseModelTorch):
 
     def __init__(self, params, args):
         super().__init__(params, args)
-
-        self.batch_size = self.params["batch_size"]
-
-        self.device = torch.device('cuda' if args.use_gpu and torch.cuda.is_available() else 'cpu')
-        # print("On Device:", self.device)
 
         self.model_self = VIMESelf(args.num_features).to(self.device)
         self.model_semi = VIMESemi(args, args.num_features, args.num_classes).to(self.device)
@@ -30,7 +25,7 @@ class VIME(BaseModel):
         X_unlab = np.concatenate([X, X_val], axis=0)
 
         self.fit_self(X_unlab, p_m=self.params["p_m"], alpha=self.params["alpha"])
-        self.fit_semi(X, y, X, X_val, y_val, p_m=self.params["p_m"], K=self.params["K"], beta=self.params["beta"])
+        return self.fit_semi(X, y, X, X_val, y_val, p_m=self.params["p_m"], K=self.params["K"], beta=self.params["beta"])
 
     def predict(self, X):
         self.load_model(filename_extension="best", directory="tmp")
@@ -42,7 +37,7 @@ class VIME(BaseModel):
         X = torch.tensor(X).float()
 
         test_dataset = TensorDataset(X)
-        test_loader = DataLoader(dataset=test_dataset, batch_size=128, shuffle=True, num_workers=2)
+        test_loader = DataLoader(dataset=test_dataset, batch_size=self.args.val_batch_size, shuffle=True, num_workers=2)
 
         self.predictions = []
 
@@ -66,7 +61,6 @@ class VIME(BaseModel):
             "alpha": trial.suggest_float("alpha", 0.1, 10),
             "K": trial.suggest_categorical("K", [2, 3, 5, 10, 15, 20]),
             "beta": trial.suggest_float("beta", 0.1, 10),
-            "batch_size": trial.suggest_categorical("batch_size", [64, 128, 256, 512])
         }
         return params
 
@@ -82,7 +76,7 @@ class VIME(BaseModel):
         m_label = torch.tensor(m_label).float()
         X = torch.tensor(X).float()
         train_dataset = TensorDataset(x_tilde, m_label, X)
-        train_loader = DataLoader(dataset=train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=2)
+        train_loader = DataLoader(dataset=train_dataset, batch_size=self.args.batch_size, shuffle=True, num_workers=2)
 
         for epoch in range(10):
             for batch_X, batch_mask, batch_feat in train_loader:
@@ -121,14 +115,17 @@ class VIME(BaseModel):
         optimizer = optim.AdamW(self.model_semi.parameters())
 
         train_dataset = TensorDataset(X, y, x_unlab)
-        train_loader = DataLoader(dataset=train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=2,
+        train_loader = DataLoader(dataset=train_dataset, batch_size=self.args.batch_size, shuffle=True, num_workers=2,
                                   drop_last=True)
 
         val_dataset = TensorDataset(X_val, y_val)
-        val_loader = DataLoader(dataset=val_dataset, batch_size=self.batch_size, shuffle=True)
+        val_loader = DataLoader(dataset=val_dataset, batch_size=self.args.val_batch_size, shuffle=True)
 
         min_val_loss = float("inf")
         min_val_loss_idx = 0
+
+        loss_history = []
+        val_loss_history = []
 
         for epoch in range(self.args.epochs):
             for i, (batch_X, batch_y, batch_unlab) in enumerate(train_loader):
@@ -136,7 +133,7 @@ class VIME(BaseModel):
                 batch_X_encoded = self.model_self.input_layer(batch_X.to(self.device))
                 y_hat = self.model_semi(batch_X_encoded)
 
-                yv_hats = torch.empty(K, self.batch_size, self.args.num_classes)
+                yv_hats = torch.empty(K, self.args.batch_size, self.args.num_classes)
                 for rep in range(K):
                     m_batch = mask_generator(p_m, batch_unlab)
                     _, batch_unlab_tmp = pretext_generator(m_batch, batch_unlab)
@@ -151,39 +148,41 @@ class VIME(BaseModel):
                 y_loss = loss_func_supervised(y_hat, batch_y.to(self.device))
                 yu_loss = torch.mean(torch.var(yv_hats, dim=0))
                 loss = y_loss + beta * yu_loss
+                loss_history.append(loss.item())
 
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
 
-                # Early Stopping
-                val_loss = 0.0
-                val_dim = 0
-                for val_i, (batch_val_X, batch_val_y) in enumerate(val_loader):
-                    batch_val_X_encoded = self.model_self.input_layer(batch_val_X.to(self.device))
-                    y_hat = self.model_semi(batch_val_X_encoded)
+            # Early Stopping
+            val_loss = 0.0
+            val_dim = 0
+            for val_i, (batch_val_X, batch_val_y) in enumerate(val_loader):
+                batch_val_X_encoded = self.model_self.input_layer(batch_val_X.to(self.device))
+                y_hat = self.model_semi(batch_val_X_encoded)
 
-                    if self.args.objective == "regression" or self.args.objective == "binary":
-                        y_hat = y_hat.squeeze()
+                if self.args.objective == "regression" or self.args.objective == "binary":
+                    y_hat = y_hat.squeeze()
 
-                    val_loss += loss_func_supervised(y_hat, batch_val_y.to(self.device))
-                    val_dim += 1
+                val_loss += loss_func_supervised(y_hat, batch_val_y.to(self.device))
+                val_dim += 1
 
-                val_loss /= val_dim
+            val_loss /= val_dim
+            val_loss_history.append(val_loss.item())
 
-                print("Epoch %d, step % i, Loss: %.5f, Val Loss: %.5f" % (epoch, i, loss, val_loss))
+            print("Epoch %d, Val Loss: %.5f" % (epoch, val_loss))
 
-                current_idx = (i + 1) * (epoch + 1)
+            if val_loss < min_val_loss:
+                min_val_loss = val_loss
+                min_val_loss_idx = epoch
 
-                if val_loss < min_val_loss:
-                    min_val_loss = val_loss
-                    min_val_loss_idx = current_idx
+                self.save_model(filename_extension="best", directory="tmp")
 
-                    self.save_model(filename_extension="best", directory="tmp")
+            if min_val_loss_idx + self.args.early_stopping_rounds < epoch:
+                print("Early stopping applies.")
+                break
 
-                if min_val_loss_idx + self.args.early_stopping_rounds < current_idx:
-                    print("Early stopping applies.", i)
-                    return
+        return loss_history, val_loss_history
 
     def save_model(self, filename_extension="", directory="models"):
         filename_self = get_output_path(self.args, directory=directory, filename="m_self", extension=filename_extension,

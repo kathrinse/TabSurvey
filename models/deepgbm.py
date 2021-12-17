@@ -1,15 +1,12 @@
-from models.basemodel import BaseModel
-from utils.io_utils import get_output_path
+from models.basemodel_torch import BaseModelTorch
 
 from models.deepgbm_lib.main import train, predict
 from models.deepgbm_lib.preprocess.preprocessing_cat import CatEncoder
 from models.deepgbm_lib.preprocess.preprocessing_num import NumEncoder
 import models.deepgbm_lib.config as deepgbm_config
 
-import torch
 
-
-class DeepGBM(BaseModel):
+class DeepGBM(BaseModelTorch):
 
     def __init__(self, params, args):
         super().__init__(params, args)
@@ -31,7 +28,9 @@ class DeepGBM(BaseModel):
 
         deepgbm_config.update({'task': args.objective,
                                "epochs": args.epochs,
-                               "early-stopping": args.early_stopping_rounds})
+                               "early-stopping": args.early_stopping_rounds,
+                               "batch_size": args.batch_size,
+                               "test_batch_size": args.val_batch_size})
         deepgbm_config.update(**params)
 
         print(deepgbm_config)
@@ -48,24 +47,20 @@ class DeepGBM(BaseModel):
         test_num = (test_x, y_val.reshape(-1, self.args.num_classes))
 
         # train
-        self.model, _ = train(train_num, test_num, train_x_cat.astype('int32'), test_x_cat.astype('int32'),
-                              feature_sizes)
+        self.model, _, loss_history, val_loss_history = train(train_num, test_num, train_x_cat.astype('int32'),
+                                                              test_x_cat.astype('int32'), feature_sizes)
+
+        return loss_history, val_loss_history
 
     def predict(self, X):
         self.predictions = predict(self.model, X, self.ce, self.ne).reshape(-1, 1)
         return self.predictions
-
-    def save_model(self, filename_extension="", directory="models"):
-        filename = get_output_path(self.args, directory=directory, filename="m", extension=filename_extension,
-                                   file_type="pt")
-        torch.save(self.model.state_dict(), filename)
 
     @classmethod
     def define_trial_parameters(cls, trial, args):
         params = {
             "n_trees": trial.suggest_categorical("n_trees", [100, 200]),
             "maxleaf": trial.suggest_categorical("maxleaf", [64, 128]),
-            "batch_size": trial.suggest_categorical("batch_size", [128, 256, 512, 1024]),
             "loss_de": trial.suggest_int("loss_de", 2, 10),
             "loss_dr": trial.suggest_categorical("loss_dr", [0.7, 0.9])
         }

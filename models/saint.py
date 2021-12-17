@@ -1,12 +1,10 @@
-from torch.utils.data import DataLoader
-
-from models.basemodel import BaseModel
-from utils.io_utils import get_output_path
+from models.basemodel_torch import BaseModelTorch
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+from torch.utils.data import DataLoader
 
 import numpy as np
 
@@ -15,12 +13,10 @@ from models.saint_lib.data_openml import DataSetCatCon
 from models.saint_lib.augmentations import embed_data_mask
 
 
-class SAINT(BaseModel):
+class SAINT(BaseModelTorch):
 
     def __init__(self, params, args):
         super().__init__(params, args)
-
-        self.device = torch.device("cuda" if torch.cuda.is_available() and args.use_gpu else "cpu")
 
         if args.cat_idx:
             num_idx = list(set(range(args.num_features)) - set(args.cat_idx))
@@ -32,7 +28,7 @@ class SAINT(BaseModel):
 
         # Decreasing some hyperparameter to cope with memory issues
         dim = self.params["dim"] if args.num_features < 50 else 8
-        self.batch_size = self.params["batch_size"] if args.num_features < 50 else 64
+        self.batch_size = self.args.batch_size if args.num_features < 50 else 64
 
         print("Using dim %d and batch size %d" % (dim, self.batch_size))
 
@@ -53,8 +49,6 @@ class SAINT(BaseModel):
         )
 
     def fit(self, X, y, X_val=None, y_val=None):
-        X = X[:10000]
-        y = y[:10000]
 
         if self.args.objective == 'binary':
             criterion = nn.BCEWithLogitsLoss()
@@ -77,10 +71,13 @@ class SAINT(BaseModel):
         trainloader = DataLoader(train_ds, batch_size=self.batch_size, shuffle=True, num_workers=4)
 
         val_ds = DataSetCatCon(X_val, y_val, self.args.cat_idx, self.args.objective)
-        valloader = DataLoader(val_ds, batch_size=512, shuffle=True, num_workers=4)
+        valloader = DataLoader(val_ds, batch_size=self.args.val_batch_size, shuffle=True, num_workers=4)
 
         min_val_loss = float("inf")
         min_val_loss_idx = 0
+
+        loss_history = []
+        val_loss_history = []
 
         for epoch in range(self.args.epochs):
             self.model.train()
@@ -112,12 +109,16 @@ class SAINT(BaseModel):
 
                 if self.args.objective == "regression":
                     y_gts = y_gts.to(self.device)
+                elif self.args.objective == "classification":
+                    y_gts = y_gts.to(self.device).squeeze()
                 else:
-                    y_gts = y_gts.to(self.device).squeeze()  # .float()
+                    y_gts = y_gts.to(self.device).float()
 
                 loss = criterion(y_outs, y_gts)
                 loss.backward()
                 optimizer.step()
+
+                loss_history.append(loss.item())
 
                 # print("Loss", loss.item())
 
@@ -139,12 +140,18 @@ class SAINT(BaseModel):
 
                     if self.args.objective == "regression":
                         y_gts = y_gts.to(self.device)
+                    elif self.args.objective == "classification":
+                        y_gts = y_gts.to(self.device).squeeze()
                     else:
-                        y_gts = y_gts.to(self.device).squeeze()  # .float()
+                        y_gts = y_gts.to(self.device).float()
 
                     val_loss += criterion(y_outs, y_gts)
                     val_dim += 1
             val_loss /= val_dim
+
+            val_loss_history.append(val_loss.item())
+
+            print("Epoch", epoch, "loss", val_loss)
 
             if val_loss < min_val_loss:
                 min_val_loss = val_loss
@@ -156,9 +163,8 @@ class SAINT(BaseModel):
             if min_val_loss_idx + self.args.early_stopping_rounds < epoch:
                 print("Validation loss has not improved for %d steps!" % self.args.early_stopping_rounds)
                 print("Early stopping applies.")
-                return
-
-            print("Epoch", epoch, "loss", val_loss)
+                break
+        return loss_history, val_loss_history
 
     def predict(self, X):
         self.load_model(filename_extension="best", directory="tmp")
@@ -167,7 +173,7 @@ class SAINT(BaseModel):
         y = {'data': np.ones((X['data'].shape[0], 1))}
 
         test_ds = DataSetCatCon(X, y, self.args.cat_idx, self.args.objective)
-        testloader = DataLoader(test_ds, batch_size=512, shuffle=False, num_workers=4)
+        testloader = DataLoader(test_ds, batch_size=self.args.val_batch_size, shuffle=False, num_workers=4)
 
         self.model.eval()
 
@@ -195,18 +201,6 @@ class SAINT(BaseModel):
         self.predictions = np.concatenate(self.predictions)
         return self.predictions
 
-    def save_model(self, filename_extension="", directory="models"):
-        filename = get_output_path(self.args, directory=directory, filename="m", extension=filename_extension,
-                                   file_type="pt")
-
-        torch.save(self.model.state_dict(), filename)
-
-    def load_model(self, filename_extension="", directory="models"):
-        filename = get_output_path(self.args, directory=directory, filename="m", extension=filename_extension,
-                                   file_type="pt")
-        state_dict = torch.load(filename)
-        self.model.load_state_dict(state_dict)
-
     @classmethod
     def define_trial_parameters(cls, trial, args):
         params = {
@@ -214,6 +208,5 @@ class SAINT(BaseModel):
             "depth": trial.suggest_categorical("depth", [1, 2, 3, 6, 12]),
             "heads": trial.suggest_categorical("heads", [2, 4, 8]),
             "dropout": trial.suggest_categorical("dropout", [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]),
-            "batch_size": trial.suggest_categorical("batch_size", [64, 128, 256, 512])
         }
         return params

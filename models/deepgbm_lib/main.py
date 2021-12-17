@@ -122,11 +122,14 @@ def train(train_num, test_num, train_cat, test_cat, feature_sizes, save_model=Fa
     x_train = np.concatenate([x_train, np.zeros((x_train.shape[0], 1), dtype=np.float32)], axis=-1)
     x_test = np.concatenate([x_test, np.zeros((x_test.shape[0], 1), dtype=np.float32)], axis=-1)
 
-    trainModel(deepgbm_model, x_train, y_train, tree_outputs, x_test, y_test, optimizer,
-               train_x_cat=train_cat, test_x_cat=test_cat, epochs=config.config['epochs'],
-               early_stopping_rounds=config.config['early_stopping'], save_model=save_model)
+    _, _, loss_history, val_loss_history = trainModel(deepgbm_model, x_train, y_train, tree_outputs, x_test, y_test,
+                                                      optimizer,
+                                                      train_x_cat=train_cat, test_x_cat=test_cat,
+                                                      epochs=config.config['epochs'],
+                                                      early_stopping_rounds=config.config['early_stopping'],
+                                                      save_model=save_model)
 
-    return deepgbm_model, optimizer
+    return deepgbm_model, optimizer, loss_history, val_loss_history
 
 
 '''

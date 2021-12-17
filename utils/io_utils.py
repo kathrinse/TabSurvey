@@ -5,6 +5,11 @@ import pickle
 output_dir = "output/"
 
 
+def save_loss_to_file(args, arr, name, extension=""):
+    filename = get_output_path(args, directory="logging", filename=name, extension=extension, file_type="txt")
+    np.savetxt(filename, arr)
+
+
 def save_predictions_to_file(arr, args, extension=""):
     filename = get_output_path(args, directory="predictions", filename="p", extension=extension, file_type="npy")
     np.save(filename, arr)

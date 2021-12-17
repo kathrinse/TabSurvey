@@ -43,6 +43,9 @@ def trainModel(model, train_x, train_y, tree_outputs, test_x, test_y, optimizer,
     min_test_loss = float("inf")
     min_test_loss_idx = 0
 
+    loss_history = []
+    val_loss_history = []
+
     for epoch in range(epochs):
 
         running_loss = 0.0
@@ -78,6 +81,7 @@ def trainModel(model, train_x, train_y, tree_outputs, test_x, test_y, optimizer,
 
             # Compute loss for documentation
             loss = model.true_loss(outputs[0], target.float())
+            loss_history.append(loss.item())
 
             # optimize the parameters
             optimizer.step()
@@ -94,20 +98,22 @@ def trainModel(model, train_x, train_y, tree_outputs, test_x, test_y, optimizer,
         metric = eval_metrics(task, test_y, preds)
         printMetric(task, metric, test_loss)
 
+        val_loss_history.append(test_loss)
+
         if test_loss < min_test_loss:
             min_test_loss = test_loss
             min_test_loss_idx = epoch
 
         if min_test_loss_idx + early_stopping_rounds < epoch:
             print("Early stopping applies!")
-            return
+            break
 
     print('Finished Training')
 
     if save_model:
         torch.save(model.state_dict(), model_path)
 
-    return model, optimizer
+    return model, optimizer, loss_history, val_loss_history
 
 
 '''

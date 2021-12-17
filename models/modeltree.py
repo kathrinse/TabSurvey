@@ -23,7 +23,7 @@ class ModelTree(BaseModel):
 
     def fit(self, X, y, X_val=None, y_val=None):
         X = np.array(X, dtype=np.float)
-        self.model.fit(X, y)
+        return super().fit(X, y, X_val, y_val)
 
     @classmethod
     def define_trial_parameters(cls, trial, args):

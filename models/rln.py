@@ -38,7 +38,9 @@ class RLN(BaseModel):
         X = np.asarray(X).astype('float32')
         X_val = np.asarray(X_val).astype('float32')
         self.model.fit(X, y, validation_data=(X_val, y_val))
-        # Early Stopping has to be defined in the RLN_Model methode
+        # Early Stopping has to be defined in the RLN_Model method
+
+        return [], []
 
     def predict(self, X):
         X = np.asarray(X).astype('float32')

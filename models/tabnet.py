@@ -1,11 +1,12 @@
 from pytorch_tabnet.tab_model import TabNetClassifier, TabNetRegressor
 
-from models.basemodel import BaseModel
-
 import numpy as np
 
+from models.basemodel_torch import BaseModelTorch
+from utils.io_utils import get_output_path
 
-class TabNet(BaseModel):
+
+class TabNet(BaseModelTorch):
 
     def __init__(self, params, args):
         super().__init__(params, args)
@@ -13,20 +14,16 @@ class TabNet(BaseModel):
         # Paper recommends to be n_d and n_a the same
         self.params["n_a"] = self.params["n_d"]
 
-        # Delete batch size from params, as TabNet can not get it as an input
-        self.tabnet_params = self.params.copy()
-        del self.tabnet_params["batch_size"]
+        self.params["cat_idxs"] = args.cat_idx
+        self.params["cat_dims"] = args.cat_dims
 
-        self.tabnet_params["cat_idxs"] = args.cat_idx
-        self.tabnet_params["cat_dims"] = args.cat_dims
-
-        self.tabnet_params["device_name"] = "cuda" if args.use_gpu else 'cpu'
+        self.params["device_name"] = self.device
 
         if args.objective == "regression":
-            self.model = TabNetRegressor(**self.tabnet_params)
+            self.model = TabNetRegressor(**self.params)
             self.metric = ["rmse"]
         elif args.objective == "classification" or args.objective == "binary":
-            self.model = TabNetClassifier(**self.tabnet_params)
+            self.model = TabNetClassifier(**self.params)
             self.metric = ["logloss"]
 
     def fit(self, X, y, X_val=None, y_val=None):
@@ -35,12 +32,24 @@ class TabNet(BaseModel):
 
         self.model.fit(X, y, eval_set=[(X_val, y_val)], eval_name=["eval"], eval_metric=self.metric,
                        max_epochs=self.args.epochs, patience=self.args.early_stopping_rounds,
-                       batch_size=self.params["batch_size"])
+                       batch_size=self.args.batch_size)
+
+        # Not so easy tracking the loss here
+        return [], []
 
     def predict(self, X):
-        # For some reason this has to be set explicitly to work with categorical data
         X = np.array(X, dtype=np.float)
-        return super().predict(X)
+
+        if self.args.objective == "regression":
+            self.predictions = self.model.predict(X)
+        elif self.args.objective == "classification" or self.args.objective == "binary":
+            self.predictions = self.model.predict_proba(X)
+        return self.predictions
+
+    def save_model(self, filename_extension="", directory="models"):
+        filename = get_output_path(self.args, directory=directory, filename="m", extension=filename_extension,
+                                   file_type="pt")
+        self.model.save_model(filename)
 
     @classmethod
     def define_trial_parameters(cls, trial, args):
@@ -53,6 +62,5 @@ class TabNet(BaseModel):
             "n_shared": trial.suggest_int("n_shared", 1, 5),
             "momentum": trial.suggest_float("momentum", 0.001, 0.4, log=True),
             "mask_type": trial.suggest_categorical("mask_type", ["sparsemax", "entmax"]),
-            "batch_size": trial.suggest_categorical("batch_size", [64, 128, 256, 512, 1024])
         }
         return params

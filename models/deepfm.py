@@ -1,16 +1,13 @@
-from models.basemodel import BaseModel
-
 import torch
 
 import numpy as np
 
+from .basemodel_torch import BaseModelTorch
 from .deepfm_lib.models.deepfm import DeepFM as DeepFMModel
 from .deepfm_lib.inputs import SparseFeat, DenseFeat
 
-from utils.io_utils import get_output_path
 
-
-class DeepFM(BaseModel):
+class DeepFM(BaseModelTorch):
 
     def __init__(self, params, args):
         super().__init__(params, args)
@@ -20,8 +17,9 @@ class DeepFM(BaseModel):
             import sys
             sys.exit()
 
-        self.device = torch.device('cuda' if args.use_gpu and torch.cuda.is_available() else 'cpu')
-        # print("On Device:", self.device)
+        #self.device = torch.device('cuda' if args.use_gpu and torch.cuda.is_available() else 'cpu')
+        # print("On Device:", device)
+        #gpus = args.gpu_ids if args.data_parallel else None
 
         if args.cat_idx:
             dense_features = list(set(range(args.num_features)) - set(args.cat_idx))
@@ -36,7 +34,8 @@ class DeepFM(BaseModel):
 
         self.model = DeepFMModel(linear_feature_columns=fixlen_feature_columns,
                                  dnn_feature_columns=fixlen_feature_columns,
-                                 task=args.objective, device=self.device, dnn_dropout=self.params["dnn_dropout"])
+                                 task=args.objective, device=self.device, dnn_dropout=self.params["dnn_dropout"],
+                                 gpus=self.gpus)
 
     def fit(self, X, y, X_val=None, y_val=None):
         X = np.array(X, dtype=np.float)
@@ -62,9 +61,12 @@ class DeepFM(BaseModel):
             X_dict["dummy"] = np.zeros(X.shape[0])
             X_val_dict["dummy"] = np.zeros(X_val.shape[0])
 
-        self.model.fit(X_dict, y, batch_size=self.params["batch_size"], epochs=self.args.epochs,
-                       validation_data=(X_val_dict, y_val), labels=labels, early_stopping=True,
-                       patience=self.args.early_stopping_rounds)
+        loss_history, val_loss_history = self.model.fit(X_dict, y, batch_size=self.args.batch_size,
+                                                        epochs=self.args.epochs,
+                                                        validation_data=(X_val_dict, y_val), labels=labels,
+                                                        early_stopping=True,
+                                                        patience=self.args.early_stopping_rounds)
+        return loss_history, val_loss_history
 
     def predict(self, X):
         X = np.array(X, dtype=np.float)
@@ -74,20 +76,14 @@ class DeepFM(BaseModel):
         if not self.args.cat_idx:
             X_dict["dummy"] = np.zeros(X.shape[0])
 
-        preds = self.model.predict(X_dict, batch_size=256)
+        preds = self.model.predict(X_dict, batch_size=self.args.batch_size)
         self.predictions = preds
         return self.predictions
-
-    def save_model(self, filename_extension="", directory="models"):
-        filename = get_output_path(self.args, directory=directory, filename="m", extension=filename_extension,
-                                   file_type="pt")
-        torch.save(self.model.state_dict(), filename)
 
     @classmethod
     def define_trial_parameters(cls, trial, args):
         params = {
             "dnn_dropout": trial.suggest_float("dnn_dropout", 0, 0.9),
-            "batch_size": trial.suggest_categorical("batch_size", [64, 128, 256, 512])
         }
         return params
 

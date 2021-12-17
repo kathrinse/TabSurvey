@@ -16,7 +16,8 @@ def get_parser():
                help="Set the type of the task")
 
     parser.add('--use_gpu', action="store_true", help="Set to true if GPU is available")
-    parser.add('--gpu_id', type=int, help="")
+    parser.add('--gpu_ids', type=int, action="append", help="IDs of the GPUs used when data_parallel is true")
+    parser.add('--data_parallel', action="store_true", help="Distribute the training over multiple GPUs")
 
     parser.add('--n_trials', type=int, default=100, help="Number of trials of the hyperparameter optimization")
     parser.add('--direction', type=str, default="minimize", choices=['minimize', 'maximize'],
@@ -30,6 +31,8 @@ def get_parser():
     parser.add('--target_encode', action="store_true", help="Encode the targets that they start at 0. (0, 1, 2,...)")
     parser.add('--one_hot_encode', action="store_true", help="OneHotEncode the categorical features")
 
+    parser.add('--batch_size', type=int, help="Batch size used for training")
+    parser.add('--val_batch_size', type=int, help="Batch size used for training and testing")
     parser.add('--early_stopping_rounds', type=int, help="Number of rounds before early stopping applies.")
     parser.add('--epochs', type=int, help="Max number of epochs to train.")
     parser.add('--logging_period', type=int, help="Number of iteration after which validation is printed.")
