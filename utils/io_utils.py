@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import pickle
+import datetime
 
 output_dir = "output/"
 
@@ -24,6 +25,7 @@ def save_results_to_file(args, results, train_time=None, test_time=None, best_pa
     filename = get_output_path(args, filename="results", file_type="txt")
 
     with open(filename, "a") as text_file:
+        text_file.write(str(datetime.datetime.now()) + "\n")
         text_file.write(args.model_name + " - " + args.dataset + "\n\n")
 
         for key, value in results.items():
@@ -39,6 +41,7 @@ def save_hyperparameters_to_file(args, params, results):
     filename = get_output_path(args, filename="hp_log", file_type="txt")
 
     with open(filename, "a") as text_file:
+        text_file.write(str(datetime.datetime.now()) + "\n")
         text_file.write("Parameters: %s\n\n" % params)
 
         for key, value in results.items():

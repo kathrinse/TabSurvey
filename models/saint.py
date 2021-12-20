@@ -151,7 +151,7 @@ class SAINT(BaseModelTorch):
 
             val_loss_history.append(val_loss.item())
 
-            print("Epoch", epoch, "loss", val_loss)
+            print("Epoch", epoch, "loss", val_loss.item())
 
             if val_loss < min_val_loss:
                 min_val_loss = val_loss

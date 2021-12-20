@@ -23,7 +23,7 @@ class XGBoost(BaseModel):
 
         if args.use_gpu:
             self.params["tree_method"] = "gpu_hist"
-            self.params["gpu_id"] = args.gpu_id
+            self.params["gpu_id"] = args.gpu_ids[0]
 
         if args.objective == "regression":
             self.params["objective"] = "reg:squarederror"
@@ -84,7 +84,7 @@ class CatBoost(BaseModel):
 
         if args.use_gpu:
             self.params["task_type"] = "GPU"
-            self.params["devices"] = [self.args.gpu_id]
+            self.params["devices"] = [self.args.gpu_ids]
 
         self.params["cat_features"] = self.args.cat_idx
 

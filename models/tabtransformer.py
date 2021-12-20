@@ -97,7 +97,7 @@ class TabTransformer(BaseModelTorch):
                     out = out.squeeze()
 
                 loss = loss_func(out, batch_y.to(self.device))
-                loss_history.append(loss)
+                loss_history.append(loss.item())
 
                 optimizer.zero_grad()
                 loss.backward()
@@ -123,7 +123,7 @@ class TabTransformer(BaseModelTorch):
                 val_loss += loss_func(out, batch_val_y.to(self.device))
                 val_dim += 1
             val_loss /= val_dim
-            val_loss_history.append(val_loss)
+            val_loss_history.append(val_loss.item())
 
             print("Epoch %d: Val Loss %.5f" % (epoch, val_loss))
 

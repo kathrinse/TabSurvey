@@ -65,11 +65,13 @@ class NAM(BaseModelTorch):
         metrics_callback = MetricsCallback()
 
         litmodel = LitNAM(self.config, self.model)
+
+        gpus = 1 if self.args.use_gpu else 0
         trainer = pl.Trainer(logger=tb_logger,  max_epochs=self.config.num_epochs,
                              enable_checkpointing=checkpoint_callback,  # checkpoint_callback
                              callbacks=[EarlyStopping(monitor='val_loss', patience=self.args.early_stopping_rounds),
                                         metrics_callback],
-                             gpus=self.gpus)
+                             gpus=gpus)
         trainer.fit(litmodel, train_dataloaders=trainloader, val_dataloaders=valloader)
 
         return metrics_callback.train_loss, metrics_callback.val_loss

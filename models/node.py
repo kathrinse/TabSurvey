@@ -89,7 +89,7 @@ class NODE(BaseModelTorch):
                                                   epochs=self.args.epochs):
 
             metrics = self.trainer.train_on_batch(*batch, device=self.device)
-            loss_history.append(metrics['loss'])
+            loss_history.append(metrics['loss'].item())
 
             if self.trainer.step % self.args.logging_period == 0:
                 self.trainer.save_checkpoint()

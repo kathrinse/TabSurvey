@@ -1,3 +1,4 @@
+from utils.io_utils import get_output_path
 from .basemodel_torch import BaseModelTorch
 
 from .stg_lib import STG as STGModel
@@ -33,6 +34,12 @@ class STG(BaseModelTorch):
     def predict(self, X):
         self.predictions = self.model.predict(X)
         return self.predictions
+
+    def save_model(self, filename_extension="", directory="models"):
+        filename = get_output_path(self.args, directory=directory, filename="m", extension=filename_extension,
+                                   file_type="pt")
+        torch.save(self.model._model.state_dict(), filename)
+
 
     @classmethod
     def define_trial_parameters(cls, trial, args):

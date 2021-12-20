@@ -25,7 +25,7 @@ class RLN(BaseModel):
         arguments = {
             'build_fn': build_fn,
             'epochs': args.epochs,
-            'batch_size': self.params["batch_size"],
+            'batch_size': self.args.batch_size,
             'verbose': 1,
         }
 
@@ -58,7 +58,6 @@ class RLN(BaseModel):
             "theta": trial.suggest_int("theta", -12, -8),
             "log_lr": trial.suggest_int("log_lr", 5, 7),
             "norm": trial.suggest_categorical("norm", [1, 2]),
-            "batch_size": trial.suggest_categorical("batch_size", [64, 125, 256, 512, 1024])
         }
         return params
 

@@ -3,7 +3,7 @@ from pytorch_tabnet.tab_model import TabNetClassifier, TabNetRegressor
 import numpy as np
 
 from models.basemodel_torch import BaseModelTorch
-from utils.io_utils import get_output_path
+from utils.io_utils import save_model_to_file
 
 
 class TabNet(BaseModelTorch):
@@ -44,12 +44,11 @@ class TabNet(BaseModelTorch):
             self.predictions = self.model.predict(X)
         elif self.args.objective == "classification" or self.args.objective == "binary":
             self.predictions = self.model.predict_proba(X)
+
         return self.predictions
 
-    def save_model(self, filename_extension="", directory="models"):
-        filename = get_output_path(self.args, directory=directory, filename="m", extension=filename_extension,
-                                   file_type="pt")
-        self.model.save_model(filename)
+    def save_model(self, filename_extension=""):
+        save_model_to_file(self.model, self.args, filename_extension)
 
     @classmethod
     def define_trial_parameters(cls, trial, args):
