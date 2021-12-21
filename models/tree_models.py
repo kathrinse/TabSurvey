@@ -94,9 +94,25 @@ class CatBoost(BaseModel):
             self.model = cat.CatBoostClassifier(**self.params)
 
     def fit(self, X, y, X_val=None, y_val=None):
+
+        # CatBoost does not accept float arrays if cat features are defined
+        if self.args.cat_idx:
+            X = X.astype('object')
+            X_val = X_val.astype('object')
+            X[:, self.args.cat_idx] = X[:, self.args.cat_idx].astype('int')
+            X_val[:, self.args.cat_idx] = X_val[:, self.args.cat_idx].astype('int')
+
         self.model.fit(X, y, eval_set=(X_val, y_val))
 
         return [], []
+
+    def predict(self, X):
+        if self.args.cat_idx:
+            X = X.astype('object')
+            X[:, self.args.cat_idx] = X[:, self.args.cat_idx].astype('int')
+
+        return super().predict(X)
+
 
     @classmethod
     def define_trial_parameters(cls, trial, args):

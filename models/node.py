@@ -108,9 +108,7 @@ class NODE(BaseModelTorch):
                     print("Val LogLoss: %0.5f" % loss)
                 elif self.args.objective == "binary":
                     loss = self.trainer.evaluate_binarylogloss(data.X_valid, data.y_valid, device=self.device,
-                                                              batch_size=self.args.batch_size)
-                    #print("Val AUC: %0.5f" % auc)
-                    #loss = 1 - auc  # loss has to decrease, auc would increase
+                                                               batch_size=self.args.batch_size)
 
                 print("Val Loss: %0.5f" % loss)
 
