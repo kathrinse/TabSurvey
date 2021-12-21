@@ -122,6 +122,6 @@ class MetricsCallback(Callback):
         metrics_dict = trainer.callback_metrics
 
         if "train_loss" in metrics_dict:
-            self.train_loss.append(metrics_dict["train_loss"])
-            self.val_loss.append(metrics_dict["val_loss"])
+            self.train_loss.append(metrics_dict["train_loss"].item())
+            self.val_loss.append(metrics_dict["val_loss"].item())
 

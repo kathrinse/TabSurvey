@@ -172,6 +172,9 @@ class ModelHandler:
         self.early_stopping = False
         self.callbacks_handler(op='pre_training')
 
+        loss_history = []
+        val_loss_history = []
+
         try:
             for epoch in range(self.config['epochs']):
 
@@ -184,6 +187,7 @@ class ModelHandler:
                     _, l = self.sess.run([self.optimizer, self.loss], feed_dict=feed_dict)
                     train_loss_sum += l * str_feed_dict['x'].shape[0]
                 self.train_loss = train_loss_sum / train_generator.get_dataset_size()
+                loss_history.append(self.train_loss)
 
                 val_loss_sum = 0
                 y_true = None
@@ -199,10 +203,14 @@ class ModelHandler:
                     y_true = y_batch if y_true is None else np.concatenate([y_true, y_batch])
                     y_pred = pred if y_pred is None else np.concatenate([y_pred, pred])
                 self.val_loss = val_loss_sum / val_generator.get_dataset_size()
+                val_loss_history.append(self.val_loss)
+
                 self.val_score = score_metric(y_true, y_pred)
                 assert val_generator.get_dataset_size() == y_true.shape[0]
 
-                print("Epoch: {0:}, loss: {1:.6f}, val loss: {2:.6f}, score: {3:.6f}".format(epoch, self.train_loss, self.val_loss, self.val_score))
+                print("Epoch: {0:}, loss: {1:.6f}, val loss: {2:.6f}, score: {3:.6f}".format(epoch, self.train_loss,
+                                                                                             self.val_loss,
+                                                                                             self.val_score))
                 if score_comparator(self.val_score, best_val_score):
                     print("Val score improved from {} to {}".format(best_val_score, self.val_score))
                     best_val_score = self.val_score
@@ -216,7 +224,8 @@ class ModelHandler:
                     break
 
             print("Best validation score: {}".format(best_val_score))
-            return best_val_score, epoch
+            # return best_val_score, epoch
+            return loss_history, val_loss_history
 
         except tf.errors.ResourceExhaustedError:
             return None, epoch
@@ -249,16 +258,26 @@ class ModelHandler:
 
         experiment_dir, weights_dir, logs_dir = create_experiment_directory(config, return_sub_dirs=True)
         model = create_model(config, models_module_name=config['models_module_name'])
-        train_generator = NumpyGenerator(data['X_train'], data['Y_train'], config['output_dim'], config['batch_size'], translate_label_to_one_hot=config['translate_label_to_one_hot'], copy_dataset=False)
-        val_generator = NumpyGenerator(data['X_val'], data['Y_val'], config['output_dim'], config['batch_size'], translate_label_to_one_hot=config['translate_label_to_one_hot'], copy_dataset=False)
-        test_generator = NumpyGenerator(data['X_test'], data['Y_test'], config['output_dim'], config['batch_size'], translate_label_to_one_hot=config['translate_label_to_one_hot'], copy_dataset=False)
+        train_generator = NumpyGenerator(data['X_train'], data['Y_train'], config['output_dim'], config['batch_size'],
+                                         translate_label_to_one_hot=config['translate_label_to_one_hot'],
+                                         copy_dataset=False)
+        val_generator = NumpyGenerator(data['X_val'], data['Y_val'], config['output_dim'], config['batch_size'],
+                                       translate_label_to_one_hot=config['translate_label_to_one_hot'],
+                                       copy_dataset=False)
+        test_generator = NumpyGenerator(data['X_test'], data['Y_test'], config['output_dim'], config['batch_size'],
+                                        translate_label_to_one_hot=config['translate_label_to_one_hot'],
+                                        copy_dataset=False)
 
-        early_stopping = EarlyStopping(patience=config['early_stopping_patience'], score_increases=score_config['score_increases'], monitor='val_score')
-        lr_scheduler = ReduceLRonPlateau(initilal_lr=config['initial_lr'], factor=config['lr_decay_factor'], patience=config['lr_patience'], min_lr=config['min_lr'], monitor='train_loss')
+        early_stopping = EarlyStopping(patience=config['early_stopping_patience'],
+                                       score_increases=score_config['score_increases'], monitor='val_score')
+        lr_scheduler = ReduceLRonPlateau(initilal_lr=config['initial_lr'], factor=config['lr_decay_factor'],
+                                         patience=config['lr_patience'], min_lr=config['min_lr'], monitor='train_loss')
 
-        model_handler = ModelHandler(config=config, model=model, callbacks=[lr_scheduler, early_stopping], target_dir=weights_dir, logs_dir=logs_dir)
+        model_handler = ModelHandler(config=config, model=model, callbacks=[lr_scheduler, early_stopping],
+                                     target_dir=weights_dir, logs_dir=logs_dir)
         model_handler.build_graph(phase='train')
-        val_score, epoch = model_handler.train(train_generator, val_generator, score_metric=score_metric, score_increases=score_config['score_increases'])
+        val_score, epoch = model_handler.train(train_generator, val_generator, score_metric=score_metric,
+                                               score_increases=score_config['score_increases'])
 
         assert os.path.exists(model_handler.target_dir + '/model_weights.ckpt.meta')
 

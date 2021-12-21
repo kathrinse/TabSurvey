@@ -71,13 +71,10 @@ class DNFNet(BaseModel):
                                           callbacks=[lr_scheduler, early_stopping],
                                           target_dir=self.weights_dir, logs_dir=self.logs_dir)
         self.model_handler.build_graph(phase='train')
-        val_score, epoch = self.model_handler.train(train_generator, val_generator, score_metric=self.score_metric,
-                                                    score_increases=self.score_config['score_increases'])
+        loss, val_loss = self.model_handler.train(train_generator, val_generator, score_metric=self.score_metric,
+                                                  score_increases=self.score_config['score_increases'])
 
-        print("Val score:", val_score)
-        print("Epoch", epoch)
-
-        return [], []
+        return loss, val_loss
 
     def predict(self, X):
         assert os.path.exists(self.weights_dir + '/model_weights.ckpt.meta')
@@ -93,7 +90,7 @@ class DNFNet(BaseModel):
             y = np.concatenate([y.reshape(-1, 1), r], axis=1)
 
         test_generator = NumpyGenerator(X, y, self.config['output_dim'], self.config['batch_size'],
-                                        translate_label_to_one_hot=False, #self.config['translate_label_to_one_hot']
+                                        translate_label_to_one_hot=False,  # self.config['translate_label_to_one_hot']
                                         copy_dataset=False)
 
         y, y_pred = self.model_handler.test(test_generator)

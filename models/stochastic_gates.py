@@ -16,7 +16,7 @@ class STG(BaseModelTorch):
 
         self.model = STGModel(task_type=task, input_dim=self.args.num_features,
                               output_dim=out_dim, activation='tanh', sigma=0.5,
-                              optimizer='SGD',  feature_selection=True, random_state=1, device=self.device,
+                              optimizer='SGD', feature_selection=True, random_state=1, device=self.device,
                               **self.params)  # batch_size=128, hidden_dims=[500, 50, 10],
 
     def fit(self, X, y, X_val=None, y_val=None):
@@ -25,11 +25,12 @@ class STG(BaseModelTorch):
         if self.args.objective == "regression":
             y, y_val = y.reshape(-1, 1), y_val.reshape(-1, 1)
 
-        self.model.fit(X, y, nr_epochs=self.args.epochs, valid_X=X_val, valid_y=y_val,
-                       print_interval=self.args.logging_period)  # early_stop=True
+        loss, val_loss = self.model.fit(X, y, nr_epochs=self.args.epochs, valid_X=X_val, valid_y=y_val,
+                                        print_interval=1)  # self.args.logging_period # early_stop=True
 
-        # Not so easy tracking the loss here
-        return [], []
+        print("Loss", loss)
+        print("Val loss", val_loss)
+        return loss, val_loss
 
     def predict(self, X):
         self.predictions = self.model.predict(X)
@@ -39,7 +40,6 @@ class STG(BaseModelTorch):
         filename = get_output_path(self.args, directory=directory, filename="m", extension=filename_extension,
                                    file_type="pt")
         torch.save(self.model._model.state_dict(), filename)
-
 
     @classmethod
     def define_trial_parameters(cls, trial, args):

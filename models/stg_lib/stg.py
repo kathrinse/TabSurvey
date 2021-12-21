@@ -174,7 +174,7 @@ class STG(object):
             val_data_loader = self.get_dataloader(valid_X, valid_y, shuffle)
         else:
             val_data_loader = None
-        self.train(data_loader, nr_epochs, val_data_loader, verbose, meters, early_stop, print_interval)
+        return self.train(data_loader, nr_epochs, val_data_loader, verbose, meters, early_stop, print_interval)
 
     def evaluate(self, X, y):
         data_loader = self.get_dataloader(X, y, shuffle=None)
@@ -220,6 +220,10 @@ class STG(object):
 
     def train(self, data_loader, nr_epochs, val_data_loader=None, verbose=True, 
         meters=None, early_stop=None, print_interval=1):
+
+        loss_history = []
+        val_loss_history = []
+
         if meters is None:
             meters = GroupMeters()
 
@@ -228,14 +232,21 @@ class STG(object):
             if epoch == self.freeze_onward:
                 self._model.freeze_weights()
             self.train_epoch(data_loader, meters=meters)
+            loss_history.append(meters.avg['loss'])
+
             if verbose and epoch % print_interval == 0:
                 self.validate(val_data_loader, self.metric, meters)
                 caption = 'Epoch: {}:'.format(epoch)
                 print(meters.format_simple(caption))
+
+                val_loss_history.append(meters.avg["valid_loss"].item())
+
             if early_stop is not None:
                 flag = early_stop(self._model)
                 if flag:
                     break
+
+        return loss_history, val_loss_history
 
     def validate_step(self, feed_dict, metric, meters=None, mode='valid'):
         with torch.no_grad():

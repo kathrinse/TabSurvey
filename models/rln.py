@@ -37,10 +37,10 @@ class RLN(BaseModel):
     def fit(self, X, y, X_val=None, y_val=None):
         X = np.asarray(X).astype('float32')
         X_val = np.asarray(X_val).astype('float32')
-        self.model.fit(X, y, validation_data=(X_val, y_val))
+        history = self.model.fit(X, y, validation_data=(X_val, y_val))
         # Early Stopping has to be defined in the RLN_Model method
 
-        return [], []
+        return history.history["loss"], history.history["val_loss"]
 
     def predict(self, X):
         X = np.asarray(X).astype('float32')

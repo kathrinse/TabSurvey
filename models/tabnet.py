@@ -33,9 +33,8 @@ class TabNet(BaseModelTorch):
         self.model.fit(X, y, eval_set=[(X_val, y_val)], eval_name=["eval"], eval_metric=self.metric,
                        max_epochs=self.args.epochs, patience=self.args.early_stopping_rounds,
                        batch_size=self.args.batch_size)
-
-        # Not so easy tracking the loss here
-        return [], []
+        history = self.model.history
+        return history['loss'], history["eval_logloss"]
 
     def predict(self, X):
         X = np.array(X, dtype=np.float)
