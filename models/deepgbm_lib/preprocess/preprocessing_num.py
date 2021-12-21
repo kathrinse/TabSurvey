@@ -19,6 +19,8 @@ class NumEncoder(object):
 
     def fit_transform(self, df):
 
+        print("Preprocess data for GBDT2NN...")
+
         # Preprocess the numerical data
         rows_num = self.min_max_scale(df.astype('float'))
 
@@ -65,7 +67,7 @@ class NumEncoder(object):
             # Compute the needed bit length based on the max size of the values
 
             if saved_bit_len is None:
-                bit_len = len(bin(df[:, item].max())) - 2
+                bit_len = len(bin(df[:, item].astype(np.uint8).max())) - 2
                 self.max_len[item] = bit_len
             else:
                 bit_len = saved_bit_len[item]

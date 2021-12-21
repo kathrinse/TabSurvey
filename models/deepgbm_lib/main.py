@@ -12,10 +12,6 @@ from models.deepgbm_lib.trainModel import trainModel, evaluateModel, makePredict
 
 import models.deepgbm_lib.config as config
 
-import torch
-
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
 '''
     Preprocess the data
     
@@ -97,7 +93,7 @@ def train(train_num, test_num, train_cat, test_cat, feature_sizes, save_model=Fa
 
     # Train embedding model
     print("\nTrain embedding model...")
-    emb_model = EmbeddingModel(n_models, max_ntree_per_split, n_output=y_train.shape[1]).to(device)
+    emb_model = EmbeddingModel(n_models, max_ntree_per_split, n_output=y_train.shape[1])
 
     optimizer = AdamW(emb_model.parameters(), lr=config.config['emb_lr'], weight_decay=config.config['l2_reg'])
     tree_outputs = np.asarray(tree_outputs).reshape((n_models, leaf_preds.shape[0])).transpose((1, 0))
@@ -113,7 +109,7 @@ def train(train_num, test_num, train_cat, test_cat, feature_sizes, save_model=Fa
                             output_w=output_w,
                             output_b=output_b,
                             cate_field_size=train_cat.shape[1],
-                            feature_sizes=feature_sizes).to(device)
+                            feature_sizes=feature_sizes)
 
     optimizer = AdamW(deepgbm_model.parameters(), lr=config.config['lr'], weight_decay=config.config['l2_reg'],
                       amsgrad=False, model_decay_opt=deepgbm_model, weight_decay_opt=config.config['l2_reg_opt'],

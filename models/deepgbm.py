@@ -30,7 +30,8 @@ class DeepGBM(BaseModelTorch):
                                "epochs": args.epochs,
                                "early-stopping": args.early_stopping_rounds,
                                "batch_size": args.batch_size,
-                               "test_batch_size": args.val_batch_size})
+                               "test_batch_size": args.val_batch_size,
+                               "device": self.device})
         deepgbm_config.update(**params)
 
         print(deepgbm_config)

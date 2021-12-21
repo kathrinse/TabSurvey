@@ -1,12 +1,11 @@
 import numpy as np
 
 import torch
-import torch.optim as optim
 from torch.utils.data import TensorDataset
 
 import models.deepgbm_lib.config as config
 
-from models.deepgbm_lib.utils.helper import AdamW, eval_metrics, printMetric
+from models.deepgbm_lib.utils.helper import eval_metrics, printMetric
 
 '''
 
@@ -20,12 +19,11 @@ from models.deepgbm_lib.utils.helper import AdamW, eval_metrics, printMetric
 
 model_path = "deepgbm.pt"
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
 
 def trainModel(model, train_x, train_y, tree_outputs, test_x, test_y, optimizer,
                train_x_cat=None, test_x_cat=None, epochs=20, early_stopping_rounds=5, save_model=False):
     task = config.config['task']
+    device = config.config['device']
 
     train_x = torch.tensor(train_x)
     train_y = torch.tensor(train_y)
@@ -46,6 +44,8 @@ def trainModel(model, train_x, train_y, tree_outputs, test_x, test_y, optimizer,
     loss_history = []
     val_loss_history = []
 
+    model = model.to(device)
+
     for epoch in range(epochs):
 
         running_loss = 0.0
@@ -57,8 +57,11 @@ def trainModel(model, train_x, train_y, tree_outputs, test_x, test_y, optimizer,
 
             if train_x_cat is not None:
                 inputs, target, tree_targets, inputs_cat = data
+                inputs_cat = inputs_cat.to(device)
             else:
                 inputs, target, tree_targets = data
+
+            inputs, target, tree_targets = inputs.to(device), target.to(device), tree_targets.to(device)
 
             # Put model in training mode
             model.train()
@@ -128,6 +131,8 @@ def trainModel(model, train_x, train_y, tree_outputs, test_x, test_y, optimizer,
 
 
 def evaluateModel(model, test_x, test_y, test_x_cat=None):
+    device = config.config['device']
+
     test_x = torch.tensor(test_x)
     test_y = torch.tensor(test_y)
 
@@ -140,6 +145,7 @@ def evaluateModel(model, test_x, test_y, test_x_cat=None):
     testloader = torch.utils.data.DataLoader(testset, batch_size=config.config['test_batch_size'])
 
     # Put model in evaluation mode
+    model = model.to(device)
     model.eval()
 
     y_preds = []
@@ -151,8 +157,11 @@ def evaluateModel(model, test_x, test_y, test_x_cat=None):
             # Get data and target from dataloader
             if test_x_cat is not None:
                 inputs, target, inputs_cat = data
+                inputs_cat = inputs_cat.to(device)
             else:
                 inputs, target = data
+
+            inputs, target = inputs.to(device), target.to(device)
 
             # Calculate outputs 
             if test_x_cat is not None:
@@ -160,10 +169,10 @@ def evaluateModel(model, test_x, test_y, test_x_cat=None):
             else:
                 outputs = model(inputs)[0]
 
-            y_preds.append(outputs.cpu())
+            y_preds.append(outputs.cpu().detach().numpy())
 
             # Compute loss
-            loss = model.true_loss(outputs, target.float()).cpu()
+            loss = model.true_loss(outputs, target.float()).item()
             sum_loss += loss * target.shape[0]
 
     return sum_loss / test_x.shape[0], np.concatenate(y_preds)
@@ -179,10 +188,13 @@ def evaluateModel(model, test_x, test_y, test_x_cat=None):
 
 
 def makePredictions(model, test_x, test_cat):
+    device = config.config['device']
+
     testset = TensorDataset(torch.tensor(test_x), torch.tensor(test_cat))
     testloader = torch.utils.data.DataLoader(testset, batch_size=config.config['test_batch_size'])
 
     # Put model in evaluation mode
+    model = model.to(device)
     model.eval()
 
     y_preds = []
@@ -190,8 +202,9 @@ def makePredictions(model, test_x, test_cat):
     with torch.no_grad():
         for data in testloader:
             inputs, inputs_cat = data
+            inputs, inputs_cat = inputs.to(device), inputs_cat.to(device)
 
             outputs = model(inputs, inputs_cat)[0]
-            y_preds.append(outputs.cpu())
+            y_preds.append(outputs.cpu().detach().numpy())
 
     return np.concatenate(y_preds, axis=0)

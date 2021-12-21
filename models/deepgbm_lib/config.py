@@ -12,6 +12,8 @@ config['early_stopping'] = 3
 config['loss_de'] = 2
 config['loss_dr'] = 0.7
 
+config['device'] = 'cpu'
+
 # Preprocessing parameters
 config['bins'] = 32
 config['rate'] = 0.9  # train test split rate

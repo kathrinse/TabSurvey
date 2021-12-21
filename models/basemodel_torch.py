@@ -27,7 +27,7 @@ class BaseModelTorch(BaseModel):
     def get_device(self):
         if self.args.use_gpu and torch.cuda.is_available():
             if self.args.data_parallel:
-                device = "cuda:" + ''.join(str(i) + ',' for i in self.args.gpu_ids)[:-1]
+                device = "cuda" # + ''.join(str(i) + ',' for i in self.args.gpu_ids)[:-1]
             else:
                 device = 'cuda'
         else:
