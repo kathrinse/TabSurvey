@@ -1,0 +1,14 @@
+# A model parameter file for the Adult data set.
+parameters: {
+    SAINT: {
+        dim: 64,
+        depth: 1,
+        heads: 2,
+        dropout: 0.2},
+
+    TabTransformer: {
+        dim: 64,
+        depth: 1,
+        heads: 2,
+        dropout: 0.1}
+}

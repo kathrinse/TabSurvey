@@ -1,5 +1,5 @@
 import configargparse
-
+import json, yaml
 
 def get_parser():
     # Use parser that can read YML files
@@ -43,4 +43,16 @@ def get_parser():
 
     # Todo: Validate the arguments
 
+    return parser
+
+
+def get_attribution_parser():
+    # Use parser that can read YML files
+    parser = get_parser()
+
+    parser.add('-paramsfile', '--paramsfile', required=False, is_config_file_arg=True, help='parameter file path',
+               default="config/adult_params.yml")  # kddcup99 covertype california_housing adult higgs
+
+    #parser.add('-parameters', '--parameters', action = "append", type=lambda x: json.loads(x.replace("'", '"')), help='parameter values')
+    parser.add('-parameters', '--parameters', type=yaml.safe_load, help='parameter values')
     return parser

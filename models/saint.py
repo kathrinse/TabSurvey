@@ -1,3 +1,4 @@
+# The SAINT model.
 from models.basemodel_torch import BaseModelTorch
 
 import torch
@@ -7,6 +8,8 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 
 import numpy as np
+from torch import einsum
+from einops import rearrange
 
 from models.saint_lib.models.pretrainmodel import SAINT as SAINTModel
 from models.saint_lib.data_openml import DataSetCatCon
@@ -57,7 +60,7 @@ class SAINT(BaseModelTorch):
         else:
             criterion = nn.MSELoss()
 
-        optimizer = optim.AdamW(self.model.parameters(), lr=0.0001)
+        optimizer = optim.AdamW(self.model.parameters(), lr=0.00003)
 
         self.model.to(self.device)
 
@@ -200,6 +203,51 @@ class SAINT(BaseModelTorch):
 
         self.predictions = np.concatenate(self.predictions)
         return self.predictions
+
+    def attribute(self, X, y):
+        """ Generate feature attributions for the model input. """
+        global my_attention
+        self.load_model(filename_extension="best", directory="tmp")
+
+        X = {'data': X, 'mask': np.ones_like(X)}
+        y = {'data': np.ones((X['data'].shape[0], 1))}
+
+        test_ds = DataSetCatCon(X, y, self.args.cat_idx, self.args.objective)
+        testloader = DataLoader(test_ds, batch_size=self.args.val_batch_size, shuffle=False, num_workers=4)
+
+        self.model.eval()
+        print(self.model)
+        # Apply hook.
+        my_attention = torch.zeros(0)
+        def sample_attribution(layer, minput, output):
+            global my_attention
+            #print(minput)
+            """ an hook to extract the attention maps. """
+            h = layer.heads
+            q, k, v = layer.to_qkv(minput[0]).chunk(3, dim=-1)
+            q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h=h), (q, k, v))
+            sim = einsum('b h i d, b h j d -> b h i j', q, k) * layer.scale
+            my_attention = sim.softmax(dim=-1)
+
+        #print(type(self.model.transformer.layers[0][0].fn.fn))
+        self.model.transformer.layers[0][0].fn.fn.register_forward_hook(sample_attribution)
+        attributions = []
+        with torch.no_grad():
+            for data in testloader:
+                x_categ, x_cont, y_gts, cat_mask, con_mask = data
+
+                x_categ, x_cont = x_categ.to(self.device), x_cont.to(self.device)
+                cat_mask, con_mask = cat_mask.to(self.device), con_mask.to(self.device)
+
+                _, x_categ_enc, x_cont_enc = embed_data_mask(x_categ, x_cont, cat_mask, con_mask, self.model)
+                reps = self.model.transformer(x_categ_enc, x_cont_enc)
+                print(my_attention.shape)
+                #y_reps = reps[:, 0, :]
+                #y_outs = self.model.mlpfory(y_reps)
+                attributions.append(my_attention.sum(dim=1).sum(dim=1))
+                
+        attributions = np.concatenate(attributions)
+        return attributions
 
     @classmethod
     def define_trial_parameters(cls, trial, args):
