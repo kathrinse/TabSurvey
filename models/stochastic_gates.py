@@ -17,7 +17,7 @@ class STG(BaseModelTorch):
         self.model = STGModel(task_type=task, input_dim=self.args.num_features,
                               output_dim=out_dim, activation='tanh', sigma=0.5,
                               optimizer='SGD', feature_selection=True, random_state=1, device=self.device,
-                              **self.params)  # batch_size=128, hidden_dims=[500, 50, 10],
+                              batch_size=self.args.batch_size, **self.params)  # hidden_dims=[500, 50, 10],
 
     def fit(self, X, y, X_val=None, y_val=None):
         X, X_val = X.astype("float"), X_val.astype("float")
@@ -49,6 +49,5 @@ class STG(BaseModelTorch):
             # Change also the number and size of the hidden_dims?
             "hidden_dims": trial.suggest_categorical("hidden_dims", [[500, 50, 10], [60, 20],
                                                                      [500, 500, 10], [500, 400, 20]]),
-            "batch_size": trial.suggest_categorical("batch_size", [64, 128, 256, 512, 1024])
         }
         return params

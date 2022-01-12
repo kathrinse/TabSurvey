@@ -31,6 +31,7 @@ class DNFNet(BaseModel):
             'translate_label_to_one_hot': True if args.objective == "classification" else False,
             'epochs': args.epochs,
             'early_stopping_patience': args.early_stopping_rounds,
+            'batch_size': args.batch_size,
             **self.params
         })
 
@@ -118,6 +119,5 @@ class DNFNet(BaseModel):
         params = {
             "n_formulas": trial.suggest_categorical("n_formulas", [64, 128, 256, 512, 1024]),  # 2048, 3072
             "elastic_net_beta": trial.suggest_categorical("elastic_net_beta", [1.6, 1.3, 1., 0.7, 0.4, 0.1]),
-            "batch_size": trial.suggest_categorical("batch_size", [64, 125, 256, 512, 1024])
         }
         return params

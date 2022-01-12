@@ -65,7 +65,7 @@ def cross_validation(model, X, y, args, save_model=False):
                              model.params)
 
     # print("Finished cross validation")
-    return sc
+    return sc, (train_timer.get_average_time(), test_timer.get_average_time())
 
 
 class Objective(object):
@@ -87,9 +87,9 @@ class Objective(object):
         model = self.model_name(trial_params, self.args)
 
         # Cross validate the chosen hyperparameters
-        sc = cross_validation(model, self.X, self.y, self.args)
+        sc, time = cross_validation(model, self.X, self.y, self.args)
 
-        save_hyperparameters_to_file(self.args, trial_params, sc.get_results())
+        save_hyperparameters_to_file(self.args, trial_params, sc.get_results(), time)
 
         return sc.get_objective_result()
 

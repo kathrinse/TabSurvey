@@ -37,7 +37,7 @@ def save_results_to_file(args, results, train_time=None, test_time=None, best_pa
         text_file.write("\nBest Parameters: %s\n\n\n" % best_params)
 
 
-def save_hyperparameters_to_file(args, params, results):
+def save_hyperparameters_to_file(args, params, results, time=None):
     filename = get_output_path(args, filename="hp_log", file_type="txt")
 
     with open(filename, "a") as text_file:
@@ -46,6 +46,10 @@ def save_hyperparameters_to_file(args, params, results):
 
         for key, value in results.items():
             text_file.write("%s: %.5f\n" % (key, value))
+
+        if time:
+            text_file.write("\nTrain time: %f\n" % time[0])
+            text_file.write("Test time: %f\n" % time[1])
 
         text_file.write("\n---------------------------------------\n")
 

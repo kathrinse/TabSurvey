@@ -19,12 +19,12 @@ def get_parser():
     parser.add('--gpu_ids', type=int, action="append", help="IDs of the GPUs used when data_parallel is true")
     parser.add('--data_parallel', action="store_true", help="Distribute the training over multiple GPUs")
 
-    parser.add('--n_trials', type=int, default=100, help="Number of trials of the hyperparameter optimization")
+    parser.add('--n_trials', type=int, default=100, help="Number of trials for the hyperparameter optimization")
     parser.add('--direction', type=str, default="minimize", choices=['minimize', 'maximize'],
                help="Direction of optimization.")
 
     parser.add('--num_splits', type=int, default=5, help="Number of splits done for cross validation")
-    parser.add('--shuffle', action="store_true", help="Direction of optimization.")
+    parser.add('--shuffle', action="store_true", help="Shuffle data during cross-validation")
     parser.add('--seed', type=int, help="Seed for KFold initialization.")
 
     parser.add('--scale', action="store_true", help="Normalize input data.")
