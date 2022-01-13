@@ -22,6 +22,8 @@ class BaseModel:
         if a validation set (X_val, y_val) is provided. Returns the loss history and validation loss history.
     predict(X)
         Predicts the labels of the test dataset (X). Saves and returns the predictions.
+    attribute(X, y)
+        Extract feature attributions for input pair (X, y)
     define_trial_parameters(trial, args)
         Returns a possible hyperparameter configuration. This method is necessary for the automated hyperparameter
         optimization.
@@ -153,3 +155,13 @@ class BaseModel:
             y = np.concatenate((y_true.reshape(-1, 1), self.predictions), axis=1)
 
         save_predictions_to_file(y, self.args, filename_extension)
+
+    def attribute(cls, X: np.ndarray, y: np.ndarray) -> np.ndarray:
+        """Get feature attributions for inherently interpretable models. This function is only implemented for interpretable models.
+
+        :param X: data (Shape N x D)
+        :param y: labels (Shape N) for which the attribution should be computed for (usage of these labels depends on the specific model)
+
+        :return The (non-normalized) importance attributions for each feature in each data point. (Shape N x D)
+        """
+        raise NotImplementedError(f"This method is not implemented for class {type(cls)}.")

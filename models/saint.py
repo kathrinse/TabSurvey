@@ -171,7 +171,7 @@ class SAINT(BaseModelTorch):
 
     def predict(self, X):
         self.load_model(filename_extension="best", directory="tmp")
-
+        
         X = {'data': X, 'mask': np.ones_like(X)}
         y = {'data': np.ones((X['data'].shape[0], 1))}
 
@@ -216,7 +216,7 @@ class SAINT(BaseModelTorch):
         testloader = DataLoader(test_ds, batch_size=self.args.val_batch_size, shuffle=False, num_workers=4)
 
         self.model.eval()
-        print(self.model)
+        #print(self.model)
         # Apply hook.
         my_attention = torch.zeros(0)
         def sample_attribution(layer, minput, output):
@@ -238,13 +238,13 @@ class SAINT(BaseModelTorch):
 
                 x_categ, x_cont = x_categ.to(self.device), x_cont.to(self.device)
                 cat_mask, con_mask = cat_mask.to(self.device), con_mask.to(self.device)
-
+                #print(x_categ.shape, x_cont.shape)
                 _, x_categ_enc, x_cont_enc = embed_data_mask(x_categ, x_cont, cat_mask, con_mask, self.model)
                 reps = self.model.transformer(x_categ_enc, x_cont_enc)
-                print(my_attention.shape)
+                #print(my_attention.shape)
                 #y_reps = reps[:, 0, :]
                 #y_outs = self.model.mlpfory(y_reps)
-                attributions.append(my_attention.sum(dim=1).sum(dim=1))
+                attributions.append(my_attention.sum(dim=1)[:,1:,1:].sum(dim=1))
                 
         attributions = np.concatenate(attributions)
         return attributions

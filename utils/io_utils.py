@@ -20,6 +20,9 @@ def save_model_to_file(model, args, extension=""):
     filename = get_output_path(args, directory="models", filename="m", extension=extension, file_type="pkl")
     pickle.dump(model, open(filename, 'wb'))
 
+def load_model_from_file(model, args, extension=""):
+    filename = get_output_path(args, directory="models", filename="m", extension=extension, file_type="pkl")
+    return pickle.load(open(filename, 'rb'))
 
 def save_results_to_file(args, results, train_time=None, test_time=None, best_params=None):
     filename = get_output_path(args, filename="results", file_type="txt")

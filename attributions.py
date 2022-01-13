@@ -13,6 +13,8 @@ def train_model(args, model,  X_train, X_val, y_train, y_val):
 def val_model(model, X_val, y_val):
     ypred = model.predict(X_val)
     print(ypred.shape, y_val.shape)
+    if len(ypred.shape)==2:
+        ypred = ypred[:,0]
     acc = np.sum((ypred.flatten() > 0.5) == y_val)/len(y_val)
     print("Accuracy: ", acc)
 
@@ -21,7 +23,6 @@ def main(args):
     X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.10, random_state=args.seed)
     args.epochs = 1
     model_name = str2model(args.model_name)
-    print(model_name)
     model = model_name(arguments.parameters[args.model_name], args)
     model = train_model(args, model, X_train, X_val, y_train, y_val)
     attrs = model.attribute(X_val, y_val)
