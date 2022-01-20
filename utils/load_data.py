@@ -4,6 +4,14 @@ from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
 import numpy as np
 import pandas as pd
 
+def discretize_colum(data_clm, num_values=10):
+    """ Discretize a column by quantiles """
+    r = np.argsort(data_clm)
+    print(r.shape)
+    bin_sz = (len(r)/(num_values)) +1 # make sure all quantiles are in range 0-(num_quarts-1)
+    q = r//bin_sz
+    return q
+
 
 def load_data(args):
     print("Loading dataset " + args.dataset + "...")
@@ -43,19 +51,24 @@ def load_data(args):
         # new_target_counts = np.unique(y, return_counts=True)
         # print(new_target_counts)
         '''
-    elif args.dataset == "Adult":  # Binary classification dataset with categorical data
+    elif args.dataset == "Adult" or args.dataset == "AdultCat":  # Binary classification dataset with categorical data, if you pass AdultCat, the numerical columns will be discretized.
         url_data = "https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data"
 
         features = ['age', 'workclass', 'fnlwgt', 'education', 'education_num', 'marital-status', 'occupation',
-                    'relationship',
-                    'race', 'sex', 'capital-gain', 'capital-loss', 'hours-per-week', 'native-country']
+                    'relationship', 'race', 'sex', 'capital-gain', 'capital-loss', 'hours-per-week', 'native-country']
         label = "income"
         columns = features + [label]
         df = pd.read_csv(url_data, names=columns)
 
         # Fill NaN with something better?
         df.fillna(0, inplace=True)
-
+        if args.dataset == "AdultCat":
+            columns_to_discr = [('age', 10),  ('fnlwgt', 25),  ('capital-gain', 10), ('capital-loss', 10), ('hours-per-week', 10)]
+            for clm, nvals in columns_to_discr:
+                df[clm] = discretize_colum(df[clm], num_values = nvals)
+                df[clm] = df[clm].astype(int).astype(str)
+            df['education_num'] = df['education_num'].astype(int).astype(str)
+            args.cat_idx = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
         X = df[features].to_numpy()
         y = df[label].to_numpy()
 
