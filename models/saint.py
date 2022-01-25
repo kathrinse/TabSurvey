@@ -20,7 +20,6 @@ class SAINT(BaseModelTorch):
 
     def __init__(self, params, args):
         super().__init__(params, args)
-
         if args.cat_idx:
             num_idx = list(set(range(args.num_features)) - set(args.cat_idx))
             # Appending 1 for CLS token, this is later used to generate embeddings.
@@ -204,7 +203,7 @@ class SAINT(BaseModelTorch):
         self.predictions = np.concatenate(self.predictions)
         return self.predictions
 
-    def attribute(self, X, y):
+    def attribute(self, X, y, strategy):
         """ Generate feature attributions for the model input. """
         global my_attention
         self.load_model(filename_extension="best", directory="tmp")
@@ -241,10 +240,12 @@ class SAINT(BaseModelTorch):
                 #print(x_categ.shape, x_cont.shape)
                 _, x_categ_enc, x_cont_enc = embed_data_mask(x_categ, x_cont, cat_mask, con_mask, self.model)
                 reps = self.model.transformer(x_categ_enc, x_cont_enc)
-                #print(my_attention.shape)
                 #y_reps = reps[:, 0, :]
                 #y_outs = self.model.mlpfory(y_reps)
-                attributions.append(my_attention.sum(dim=1)[:,1:,1:].sum(dim=1))
+                if strategy == "diag":
+                    attributions.append(my_attention.sum(dim=1)[:,1:,1:].diagonal(0,1,2))
+                else:
+                    attributions.append(my_attention.sum(dim=1)[:,1:,1:].sum(dim=1))
                 
         attributions = np.concatenate(attributions)
         return attributions

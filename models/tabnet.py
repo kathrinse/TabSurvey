@@ -69,7 +69,7 @@ class TabNet(BaseModelTorch):
         return params
 
 
-    def attribute(self, X: np.ndarray, y: np.ndarray):
+    def attribute(self, X: np.ndarray, y: np.ndarray, stategy=""):
         X = np.array(X, dtype=np.float)
         attributions = self.model.explain(torch.tensor(X, dtype=torch.float32))[0]
         return attributions

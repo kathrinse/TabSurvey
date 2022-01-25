@@ -156,11 +156,14 @@ class BaseModel:
 
         save_predictions_to_file(y, self.args, filename_extension)
 
-    def attribute(cls, X: np.ndarray, y: np.ndarray) -> np.ndarray:
+    def attribute(cls, X: np.ndarray, y: np.ndarray, strategy: str = "") -> np.ndarray:
         """Get feature attributions for inherently interpretable models. This function is only implemented for interpretable models.
 
         :param X: data (Shape N x D)
         :param y: labels (Shape N) for which the attribution should be computed for (usage of these labels depends on the specific model)
+
+        :strategy: if there are different strategies that can be used to compute the attributions they can be passed here. 
+                    Passing an empty sting should always result in the default strategy.
 
         :return The (non-normalized) importance attributions for each feature in each data point. (Shape N x D)
         """

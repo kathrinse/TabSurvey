@@ -183,7 +183,7 @@ class TabTransformer(BaseModelTorch):
         }
         return params
 
-    def attribute(self, X: np.ndarray, y: np.ndarray):
+    def attribute(self, X: np.ndarray, y: np.ndarray, strategy="")):
         X = np.array(X, dtype=np.float)
         # Unroll and Rerun until first attention stage.
 
@@ -212,8 +212,11 @@ class TabTransformer(BaseModelTorch):
                     q, k, v = active_transformer.to_qkv(x).chunk(3, dim=-1)
                     q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h=h), (q, k, v))
                     sim = einsum('b h i d, b h j d -> b h i j', q, k) * active_transformer.scale
-                    attn = sim.softmax(dim=-1)
-                    attentions_list.append(attn.sum(dim=1))
+                    attn = sim.softmax(dim=-1) 
+                    if strategy == "diag":
+                        attentions_list.append(attn.diagonal(0,1,2))
+                    else:
+                        attentions_list.append(attn.sum(dim=1))
                 else:
                     raise ValueError("Attention can only be computed for categorical values in TabTransformer.")
             attentions_list = torch.cat(attentions_list).sum(dim=1)
