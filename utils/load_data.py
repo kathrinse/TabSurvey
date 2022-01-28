@@ -7,7 +7,6 @@ import pandas as pd
 def discretize_colum(data_clm, num_values=10):
     """ Discretize a column by quantiles """
     r = np.argsort(data_clm)
-    print(r.shape)
     bin_sz = (len(r)/(num_values)) +1 # make sure all quantiles are in range 0-(num_quarts-1)
     q = r//bin_sz
     return q

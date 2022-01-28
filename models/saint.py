@@ -208,6 +208,7 @@ class SAINT(BaseModelTorch):
             Two strategies are supported: default ("") or "diag". The default strategie takes the sum
             over a column of the attention map, while "diag" returns only the diagonal (feature attention to itself)
             of the attention map.
+            return array with the same shape as X.
         """
         global my_attention
         #self.load_model(filename_extension="best", directory="tmp")

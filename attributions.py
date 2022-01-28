@@ -9,6 +9,7 @@ from sklearn.model_selection import train_test_split
 from utils.baseline_attributions import get_shap_attributions
 from models.basemodel import BaseModel
 import typing as tp
+import types
 
 def train_model(args, model: BaseModel,  X_train: np.ndarray, X_val: np.ndarray,
                 y_train: np.ndarray, y_val: np.ndarray) -> BaseModel:
@@ -69,7 +70,6 @@ def global_removal_benchmark(args, X_train: np.ndarray, X_val: np.ndarray, y_tra
 
         args.cat_idx = new_cat_idx
         args.cat_dims = new_cat_dims
-        #print(new_cat_idx, args.cat_dims)
         args.num_features = remaining_features
         
         model_name = str2model(args.model_name)
@@ -130,7 +130,6 @@ def compare_to_shap(args, attrs, model, X_val, sample_size=100):
     #save_attributions_image(attrs, feature_names, args.model_name+"_shap")
     res_dict["shap_attributions"] = shap_attrs.tolist()
     
-    #print(attrs, shap_attrs)
     rank_corrs = compute_spearman_corr(np.abs(attrs), np.abs(shap_attrs))
     res_dict["rank_corr_mean"] = np.mean(rank_corrs)
     res_dict["rank_corr_std"] = np.std(rank_corrs)
@@ -152,7 +151,7 @@ def val_model(model: BaseModel, X_val: np.ndarray, y_val: np.ndarray) -> float:
     return acc
 
 
-def save_attributions_image(attrs: np.ndarray, namelist: tp.Union[tp.List[str], NoneType]=None,
+def save_attributions_image(attrs: np.ndarray, namelist: tp.Optional[tp.List[str]]=None,
                             file_name: str=""):
     """ Save attributions in a plot. 
         :param attrs: (N, D) attributions (N samples, D features)
@@ -192,6 +191,12 @@ def main(args):
                     'relationship', 'race', 'sex', 'capital-gain', 'capital-loss', 'hours-per-week', 'native-country']
     else:
         feature_names = None
+    res_dict = {}
+    res_dict["model"]= args.model_name
+    res_dict["strategy"] = str(args.strategy)
+    res_dict["dataset"] = args.dataset
+    res_dict["attributions"] = attrs.tolist()
+    save_results_to_json_file(args, res_dict, f"attributions{args.strategy}", append=True)
     save_attributions_image(attrs[:20,:], feature_names, args.model_name)
 
     # Run global attribution benchmark if flag is passed.
