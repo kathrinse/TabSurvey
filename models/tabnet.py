@@ -38,7 +38,7 @@ class TabNet(BaseModelTorch):
         return history['loss'], history["eval_logloss"]
 
     def predict(self, X):
-        self.load_model(filename_extension="best")
+        #self.load_model(filename_extension="best")
         X = np.array(X, dtype=np.float)
 
         if self.args.objective == "regression":
@@ -70,6 +70,10 @@ class TabNet(BaseModelTorch):
 
 
     def attribute(self, X: np.ndarray, y: np.ndarray, stategy=""):
+        """ Generate feature attributions for the model input.
+            Only strategy are supported: default ("") 
+            Return attribution in the same shape as X.
+        """
         X = np.array(X, dtype=np.float)
         attributions = self.model.explain(torch.tensor(X, dtype=torch.float32))[0]
         return attributions

@@ -169,7 +169,7 @@ class SAINT(BaseModelTorch):
         return loss_history, val_loss_history
 
     def predict(self, X):
-        self.load_model(filename_extension="best", directory="tmp")
+        #self.load_model(filename_extension="best", directory="tmp")
         
         X = {'data': X, 'mask': np.ones_like(X)}
         y = {'data': np.ones((X['data'].shape[0], 1))}
@@ -203,10 +203,14 @@ class SAINT(BaseModelTorch):
         self.predictions = np.concatenate(self.predictions)
         return self.predictions
 
-    def attribute(self, X, y, strategy):
-        """ Generate feature attributions for the model input. """
+    def attribute(self, X, y, strategy=""):
+        """ Generate feature attributions for the model input.
+            Two strategies are supported: default ("") or "diag". The default strategie takes the sum
+            over a column of the attention map, while "diag" returns only the diagonal (feature attention to itself)
+            of the attention map.
+        """
         global my_attention
-        self.load_model(filename_extension="best", directory="tmp")
+        #self.load_model(filename_extension="best", directory="tmp")
 
         X = {'data': X, 'mask': np.ones_like(X)}
         y = {'data': np.ones((X['data'].shape[0], 1))}

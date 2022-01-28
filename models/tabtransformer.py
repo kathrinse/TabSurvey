@@ -143,7 +143,7 @@ class TabTransformer(BaseModelTorch):
 
     def predict(self, X):
 
-        self.load_model(filename_extension="best", directory="tmp")
+        #self.load_model(filename_extension="best", directory="tmp")
         self.model.eval()
 
         # For some reason this has to be set explicitly to work with categorical data
@@ -183,7 +183,13 @@ class TabTransformer(BaseModelTorch):
         }
         return params
 
-    def attribute(self, X: np.ndarray, y: np.ndarray, strategy="")):
+    def attribute(self, X: np.ndarray, y: np.ndarray, strategy=""):
+        """ Generate feature attributions for the model input.
+            Two strategies are supported: default ("") or "diag". The default strategie takes the sum
+            over a column of the attention map, while "diag" returns only the diagonal (feature attention to itself)
+            of the attention map.
+            return array with the same shape as X. The number of columns is equal to the number of categorical values in X.
+        """
         X = np.array(X, dtype=np.float)
         # Unroll and Rerun until first attention stage.
 
@@ -214,7 +220,8 @@ class TabTransformer(BaseModelTorch):
                     sim = einsum('b h i d, b h j d -> b h i j', q, k) * active_transformer.scale
                     attn = sim.softmax(dim=-1) 
                     if strategy == "diag":
-                        attentions_list.append(attn.diagonal(0,1,2))
+                        print(attn.shape)
+                        attentions_list.append(attn.diagonal(0,2,3))
                     else:
                         attentions_list.append(attn.sum(dim=1))
                 else:
