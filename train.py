@@ -97,6 +97,7 @@ class Objective(object):
 
 
 def main(args):
+    print("Start hyperparameter optimization")
     X, y = load_data(args)
 
     model_name = str2model(args.model_name)
@@ -110,9 +111,26 @@ def main(args):
     cross_validation(model, X, y, args, save_model=True)
 
 
+def main_once(args):
+    print("Train model with given hyperparameters")
+    X, y = load_data(args)
+
+    model_name = str2model(args.model_name)
+
+    parameters = args.parameters[args.dataset][args.model_name]
+    model = model_name(parameters, args)
+
+    sc, time = cross_validation(model, X, y, args)
+    print(sc.get_results())
+    print(time)
+
+
 if __name__ == "__main__":
     parser = get_parser()
     arguments = parser.parse_args()
     print(arguments)
 
-    main(arguments)
+    if arguments.optimize_hyperparameters:
+        main(arguments)
+    else:
+        main_once(arguments)

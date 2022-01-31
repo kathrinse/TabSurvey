@@ -99,3 +99,7 @@ both should be minimized.
 - *cat_idx*: List the indices of the categorical features in your dataset (if there are any).
 
 It is recommended to specify the remaining hyperparameters here as well.
+
+----------------------------
+
+<!-- ![Architecture of the docker container](Docker_architecture.png) -->

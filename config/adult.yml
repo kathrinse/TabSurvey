@@ -3,6 +3,7 @@ dataset: Adult
 model_name: TabNet # LinearModel, KNN, SVM, DecisionTree, RandomForest, XGBoost, CatBoost, LightGBM, ModelTree
                 # MLP, TabNet, VIME, TabTransformer, RLN, DNFNet, STG, NAM, DeepFM, SAINT
 objective: binary # Don't change
+#optimize_hyperparameters: 'true'
 
 # GPU parameters
 use_gpu: 'false'
