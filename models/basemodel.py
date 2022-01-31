@@ -22,6 +22,8 @@ class BaseModel:
         if a validation set (X_val, y_val) is provided. Returns the loss history and validation loss history.
     predict(X)
         Predicts the labels of the test dataset (X). Saves and returns the predictions.
+    attribute(X, y)
+        Extract feature attributions for input pair (X, y)
     define_trial_parameters(trial, args)
         Returns a possible hyperparameter configuration. This method is necessary for the automated hyperparameter
         optimization.
@@ -157,6 +159,15 @@ class BaseModel:
     def get_model_size(self):
         raise NotImplementedError("Computation of model size has not been implemented for this model.")
 
-        #coef = sum([a.size for a in self.model.coef_])
-        #intercpet = sum([a.size for a in self.model.intercept_])
-        #return coef + intercpet
+    def attribute(cls, X: np.ndarray, y: np.ndarray, strategy: str = "") -> np.ndarray:
+        """Get feature attributions for inherently interpretable models. This function is only implemented for interpretable models.
+
+        :param X: data (Shape N x D)
+        :param y: labels (Shape N) for which the attribution should be computed for (usage of these labels depends on the specific model)
+
+        :strategy: if there are different strategies that can be used to compute the attributions they can be passed here. 
+                    Passing an empty sting should always result in the default strategy.
+
+        :return The (non-normalized) importance attributions for each feature in each data point. (Shape N x D)
+        """
+        raise NotImplementedError(f"This method is not implemented for class {type(cls)}.")

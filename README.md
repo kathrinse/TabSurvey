@@ -69,6 +69,25 @@ want to run and then call:
 `./testall.sh`
 
 -------------------------------------
+### Computing model attributions (currently supported for SAINT, TabTransformer, TabNet)
+
+The framework provides implementations to compute feature attribution explanations for several models.
+Additionally, the feature attributions can be automatically compared to SHAP values and a global ablation 
+test which successively perturbs the most important features, can be run. The same parameters as before can passed, but
+with some additions:
+
+`attribute.py --model_name <Name of the Model> [--globalbenchmark] [--compareshap] [--numruns <int>] [--strategy diag]`
+
+- `--globalbenchmark` Additionally run the global perturbation benchmark
+
+- `--compareshap` Compare attributions to shapley values
+
+- `--numruns <number run>` Number of repetitions for the global benchmark
+
+- ``--strategy diag`` SAINT and TabTransformer support another attribution strategy, where the diagonal of the attention map is used. Pass this argument to use it.
+
+
+-------------------------------------
 
 ## Add new models
 

@@ -1,9 +1,8 @@
 from pytorch_tabnet.tab_model import TabNetClassifier, TabNetRegressor
-
 import numpy as np
-
+import torch
 from models.basemodel_torch import BaseModelTorch
-from utils.io_utils import save_model_to_file
+from utils.io_utils import save_model_to_file, load_model_from_file
 
 
 class TabNet(BaseModelTorch):
@@ -34,9 +33,11 @@ class TabNet(BaseModelTorch):
                        max_epochs=self.args.epochs, patience=self.args.early_stopping_rounds,
                        batch_size=self.args.batch_size)
         history = self.model.history
+        self.save_model(filename_extension="best")
         return history['loss'], history["eval_" + self.metric[0]]
 
     def predict(self, X):
+        # self.load_model(filename_extension="best")
         X = np.array(X, dtype=np.float)
 
         if self.args.objective == "regression":
@@ -48,6 +49,9 @@ class TabNet(BaseModelTorch):
 
     def save_model(self, filename_extension=""):
         save_model_to_file(self.model, self.args, filename_extension)
+
+    def load_model(self, filename_extension=""):
+        self.model = load_model_from_file(self.model, self.args, filename_extension)
 
     @classmethod
     def define_trial_parameters(cls, trial, args):
@@ -62,3 +66,12 @@ class TabNet(BaseModelTorch):
             "mask_type": trial.suggest_categorical("mask_type", ["sparsemax", "entmax"]),
         }
         return params
+
+    def attribute(self, X: np.ndarray, y: np.ndarray, stategy=""):
+        """ Generate feature attributions for the model input.
+            Only strategy are supported: default ("") 
+            Return attribution in the same shape as X.
+        """
+        X = np.array(X, dtype=np.float)
+        attributions = self.model.explain(torch.tensor(X, dtype=torch.float32))[0]
+        return attributions

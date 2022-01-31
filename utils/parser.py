@@ -50,3 +50,19 @@ def get_parser():
     parser.add('--optimize_hyperparameters', action="store_true")
 
     return parser
+
+
+def get_attribution_parser():
+    # Use parser that can read YML files
+    parser = get_parser()
+
+    parser.add('-paramsfile', '--paramsfile', required=False, is_config_file_arg=True, help='parameter file path',
+               default="config/adult_params.yml")  # kddcup99 covertype california_housing adult higgs
+
+    parser.add('-parameters', '--parameters', type=yaml.safe_load, help='parameter values')
+
+    parser.add('--globalbenchmark', action="store_true", help="Run a ablation global attribution benchmark.")
+    parser.add('--compareshap', action="store_true", help="Compare attributions to shapley values.")
+    parser.add('--strategy', type=str, help="attribution computation strategy string")
+    parser.add('--numruns', type=int, help="number of repetitions to run", default=1)
+    return parser
