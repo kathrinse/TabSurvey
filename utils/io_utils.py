@@ -2,6 +2,7 @@ import numpy as np
 import os
 import pickle
 import datetime
+import json
 
 output_dir = "output/"
 
@@ -19,6 +20,30 @@ def save_predictions_to_file(arr, args, extension=""):
 def save_model_to_file(model, args, extension=""):
     filename = get_output_path(args, directory="models", filename="m", extension=extension, file_type="pkl")
     pickle.dump(model, open(filename, 'wb'))
+
+def load_model_from_file(model, args, extension=""):
+    filename = get_output_path(args, directory="models", filename="m", extension=extension, file_type="pkl")
+    return pickle.load(open(filename, 'rb'))
+
+def save_results_to_json_file(args, jsondict, resultsname, append=True):
+    """ Write the results to a json file. 
+        jsondict: A dictionary with results that will be serialized.
+        If append=True, the results will be appended to the original file.
+        If not, they will be overwritten if the file already exists. 
+    """
+    filename = get_output_path(args, filename=resultsname, file_type="json")
+    if append:
+        if os.path.exists(filename):
+           old_res = json.load(open(filename))
+           for k,v in jsondict.items():
+               old_res[k].append(v)
+        else:
+            old_res = {}
+            for k,v in jsondict.items():
+               old_res[k]=[v]
+        jsondict = old_res
+    json.dump(jsondict, open(filename, "w"))
+
 
 
 def save_results_to_file(args, results, train_time=None, test_time=None, best_params=None):

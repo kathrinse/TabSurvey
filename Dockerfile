@@ -45,6 +45,10 @@ RUN /opt/conda/bin/conda install -n torch -y -c conda-forge optuna
 RUN /opt/conda/bin/conda install -n torch -y -c conda-forge configargparse
 RUN /opt/conda/bin/conda install -n torch -y scikit-learn
 RUN /opt/conda/bin/conda install -n torch -y pandas
+RUN /opt/conda/bin/conda install -n torch -y matplotlib
+RUN /opt/conda/bin/conda install -n torch -y -c pytorch captum
+RUN /opt/conda/bin/conda install -n torch -y shap
+RUN /opt/conda/envs/gbdt/bin/python -m ipykernel install --user --name=torch
 
 # For TabNet
 RUN /opt/conda/envs/torch/bin/python -m pip install pytorch-tabnet
@@ -82,6 +86,5 @@ RUN /opt/conda/envs/torch/bin/python -m pip install tabulate
 
 # Download code into container
 RUN git clone https://github.com/kathrinse/TabSurvey.git /opt/notebooks
-
 # Start jupyter notebook
 CMD opt/conda/bin/jupyter notebook --notebook-dir=/opt/notebooks --ip='*' --port=3123 --no-browser --allow-root
