@@ -34,7 +34,7 @@ class TabNet(BaseModelTorch):
                        max_epochs=self.args.epochs, patience=self.args.early_stopping_rounds,
                        batch_size=self.args.batch_size)
         history = self.model.history
-        return history['loss'], history["eval_logloss"]
+        return history['loss'], history["eval_" + self.metric[0]]
 
     def predict(self, X):
         X = np.array(X, dtype=np.float)
