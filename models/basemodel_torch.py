@@ -147,6 +147,10 @@ class BaseModelTorch(BaseModel):
         state_dict = torch.load(filename)
         self.model.load_state_dict(state_dict)
 
+    def get_model_size(self):
+        model_size = sum(t.numel() for t in self.model.parameters())
+        return model_size
+
     @classmethod
     def define_trial_parameters(cls, trial, args):
         raise NotImplementedError("This method has to be implemented by the sub class")

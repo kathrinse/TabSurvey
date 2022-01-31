@@ -153,3 +153,10 @@ class BaseModel:
             y = np.concatenate((y_true.reshape(-1, 1), self.predictions), axis=1)
 
         save_predictions_to_file(y, self.args, filename_extension)
+
+    def get_model_size(self):
+        raise NotImplementedError("Computation of model size has not been implemented for this model.")
+
+        #coef = sum([a.size for a in self.model.coef_])
+        #intercpet = sum([a.size for a in self.model.intercept_])
+        #return coef + intercpet
