@@ -5,7 +5,7 @@ from utils.load_data import load_data
 from utils.scorer import get_scorer
 from utils.timer import Timer
 from utils.io_utils import save_results_to_file, save_hyperparameters_to_file, save_loss_to_file
-from utils.parser import get_parser
+from utils.parser import get_parser, get_given_parameters_parser
 
 from sklearn.model_selection import KFold, StratifiedKFold  # , train_test_split
 
@@ -133,4 +133,7 @@ if __name__ == "__main__":
     if arguments.optimize_hyperparameters:
         main(arguments)
     else:
+        # Also load the best parameters
+        parser = get_given_parameters_parser()
+        arguments = parser.parse_args()
         main_once(arguments)

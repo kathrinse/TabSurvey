@@ -44,10 +44,16 @@ def get_parser():
 
     # Todo: Validate the arguments
 
-    parser.add('-best_params_file', is_config_file_arg=True, default="config/best_params.yml")
-    parser.add('--parameters', type=yaml.safe_load)
-
     parser.add('--optimize_hyperparameters', action="store_true")
+
+    return parser
+
+
+def get_given_parameters_parser():
+    parser = get_parser()
+
+    parser.add('-best_params_file', '--best_params_file', is_config_file_arg=True, default="config/best_params.yml")
+    parser.add('-parameters', '--parameters', type=yaml.safe_load)
 
     return parser
 
