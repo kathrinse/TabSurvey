@@ -20,6 +20,8 @@ def get_parser():
     parser.add('--gpu_ids', type=int, action="append", help="IDs of the GPUs used when data_parallel is true")
     parser.add('--data_parallel', action="store_true", help="Distribute the training over multiple GPUs")
 
+    parser.add('--optimize_hyperparameters', action="store_true",
+               help="Search for the best hyperparameters")
     parser.add('--n_trials', type=int, default=100, help="Number of trials for the hyperparameter optimization")
     parser.add('--direction', type=str, default="minimize", choices=['minimize', 'maximize'],
                help="Direction of optimization.")
@@ -44,16 +46,15 @@ def get_parser():
 
     # Todo: Validate the arguments
 
-    parser.add('--optimize_hyperparameters', action="store_true")
-
     return parser
 
 
 def get_given_parameters_parser():
     parser = get_parser()
 
-    parser.add('-best_params_file', '--best_params_file', is_config_file_arg=True, default="config/best_params.yml")
-    parser.add('-parameters', '--parameters', type=yaml.safe_load)
+    parser.add('-best_params_file', '--best_params_file', is_config_file_arg=True, default="config/best_params.yml",
+               help="Parameter file path")
+    parser.add('-parameters', '--parameters', type=yaml.safe_load, help="Parameter values")
 
     return parser
 

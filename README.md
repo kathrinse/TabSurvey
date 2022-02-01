@@ -43,11 +43,13 @@ To run a single model on a single dataset call:
 
 All parameters set in the config file, can be overwritten by command line arguments, for example:
 
-- ``--n_trails <number trials>`` (Number of trials to run for the hyperparameter search) 
+- ``--optimize_hyperparameters`` Uses [Optuna](https://optuna.org/) to run a hyperparameter optimization. If not set, the parameters listed in the `best_params.yml` file are used.
 
-- ``--epochs <number epochs>`` (Max number of epochs)
+- ``--n_trails <number trials>`` Number of trials to run for the hyperparameter search
 
-- ``--use_gpu`` (If set, available GPUs are used (specified by `gpu_ids`))
+- ``--epochs <number epochs>`` Max number of epochs
+
+- ``--use_gpu`` If set, available GPUs are used (specified by `gpu_ids`)
 
 - ... and so on. All possible parameters can be found in the config files or calling: 
 ``python train.y -h``
@@ -95,8 +97,9 @@ Every new model should inherit from the base class `BaseModel`. Implement the fo
 
 - `def __init__(self, params, args)`: Define your model here.
 - `def fit(self, X, y, X_val=None, y_val=None)`: Implement the training process. (Return the loss and validation history)
-- `def predict(self, X)`: Save and return the predictions on the test data.
-- `def define_trial_parameters(cls, trial, args)`: Define the hyperparameters that have to be optimized.
+- `def predict(self, X)`: Save and return the predictions on the test data - the regression values or the concrete classes for classification tasks
+- `def predict_proba(self, X)`: Only for classification tasks. Save and return the probability distribution over the classes.
+- `def define_trial_parameters(cls, trial, args)`: Define the hyperparameters that should be optimized.
 - (optional) `def save_model`: If you want to save your model in a specific manner, override this function to.
 
 Add your `<model>.py` file to the `models` directory and do not forget to update the `models/__init__.py` file.
