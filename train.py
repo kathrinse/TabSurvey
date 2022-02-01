@@ -40,7 +40,7 @@ def cross_validation(model, X, y, args, save_model=False):
 
         # Test model
         test_timer.start()
-        predictions = curr_model.predict(X_test)
+        curr_model.predict(X_test)
         test_timer.end()
 
         # Save model weights and the truth/prediction pairs for traceability
@@ -51,7 +51,7 @@ def cross_validation(model, X, y, args, save_model=False):
             save_loss_to_file(args, val_loss_history, "val_loss", extension=i)
 
         # Compute scores on the output
-        sc.eval(y_test, predictions)
+        sc.eval(y_test, curr_model.predictions, curr_model.prediction_probabilities)
 
         print(sc.get_results())
 

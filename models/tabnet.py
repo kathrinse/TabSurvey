@@ -36,16 +36,13 @@ class TabNet(BaseModelTorch):
         self.save_model(filename_extension="best")
         return history['loss'], history["eval_" + self.metric[0]]
 
-    def predict(self, X):
-        # self.load_model(filename_extension="best")
+    def predict_helper(self, X):
         X = np.array(X, dtype=np.float)
 
         if self.args.objective == "regression":
-            self.predictions = self.model.predict(X)
+            return self.model.predict(X)
         elif self.args.objective == "classification" or self.args.objective == "binary":
-            self.predictions = self.model.predict_proba(X)
-
-        return self.predictions
+            return self.model.predict_proba(X)
 
     def save_model(self, filename_extension=""):
         save_model_to_file(self.model, self.args, filename_extension)

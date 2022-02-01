@@ -139,14 +139,11 @@ class TabTransformer(BaseModelTorch):
                 print("Early stopping applies.")
                 break
 
+        self.load_model(filename_extension="best", directory="tmp")
         return loss_history, val_loss_history
 
-    def predict(self, X):
-
-        #self.load_model(filename_extension="best", directory="tmp")
+    def predict_helper(self, X):
         self.model.eval()
-
-        # For some reason this has to be set explicitly to work with categorical data
         X = np.array(X, dtype=np.float)
         X = torch.tensor(X).float()
 
@@ -154,7 +151,7 @@ class TabTransformer(BaseModelTorch):
         test_loader = DataLoader(dataset=test_dataset, batch_size=self.args.val_batch_size, shuffle=False,
                                  num_workers=2)
 
-        self.predictions = []
+        predictions = []
 
         with torch.no_grad():
             for batch_X in test_loader:
@@ -166,10 +163,8 @@ class TabTransformer(BaseModelTorch):
                 if self.args.objective == "binary":
                     preds = torch.sigmoid(preds)
 
-                self.predictions.append(preds.cpu())
-
-        self.predictions = np.concatenate(self.predictions)
-        return self.predictions
+                predictions.append(preds.cpu())
+        return np.concatenate(predictions)
 
     @classmethod
     def define_trial_parameters(cls, trial, args):

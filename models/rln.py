@@ -1,3 +1,5 @@
+from sklearn.preprocessing import OneHotEncoder
+
 from models.basemodel import BaseModel
 
 from keras.callbacks import Callback, EarlyStopping
@@ -37,6 +39,12 @@ class RLN(BaseModel):
     def fit(self, X, y, X_val=None, y_val=None):
         X = np.asarray(X).astype('float32')
         X_val = np.asarray(X_val).astype('float32')
+
+        # Needs the targets one hot encoded
+        ohe = OneHotEncoder(sparse=False, handle_unknown='ignore')
+        y = ohe.fit_transform(y.reshape(-1, 1))
+        y_val = ohe.transform(y_val.reshape(-1, 1))
+
         history = self.model.fit(X, y, validation_data=(X_val, y_val))
         # Early Stopping has to be defined in the RLN_Model method
 
@@ -45,6 +53,10 @@ class RLN(BaseModel):
     def predict(self, X):
         X = np.asarray(X).astype('float32')
         return super().predict(X)
+
+    def predict_proba(self, X):
+        X = np.asarray(X).astype('float32')
+        return super().predict_proba(X)
 
     def save_model(self, filename_extension="", directory="models"):
         filename = get_output_path(self.args, directory=directory, filename="m", extension=filename_extension,

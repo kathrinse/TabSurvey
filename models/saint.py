@@ -166,11 +166,11 @@ class SAINT(BaseModelTorch):
                 print("Validation loss has not improved for %d steps!" % self.args.early_stopping_rounds)
                 print("Early stopping applies.")
                 break
+
+        self.load_model(filename_extension="best", directory="tmp")
         return loss_history, val_loss_history
 
-    def predict(self, X):
-        # self.load_model(filename_extension="best", directory="tmp")
-
+    def predict_helper(self, X):
         X = {'data': X, 'mask': np.ones_like(X)}
         y = {'data': np.ones((X['data'].shape[0], 1))}
 
@@ -179,7 +179,7 @@ class SAINT(BaseModelTorch):
 
         self.model.eval()
 
-        self.predictions = []
+        predictions = []
 
         with torch.no_grad():
             for data in testloader:
@@ -198,10 +198,8 @@ class SAINT(BaseModelTorch):
                 elif self.args.objective == "classification":
                     y_outs = F.softmax(y_outs, dim=1)
 
-                self.predictions.append(y_outs.detach().cpu().numpy())
-
-        self.predictions = np.concatenate(self.predictions)
-        return self.predictions
+                predictions.append(y_outs.detach().cpu().numpy())
+        return np.concatenate(predictions)
 
     def attribute(self, X, y, strategy=""):
         """ Generate feature attributions for the model input.

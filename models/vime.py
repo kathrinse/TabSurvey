@@ -25,21 +25,24 @@ class VIME(BaseModelTorch):
         X_unlab = np.concatenate([X, X_val], axis=0)
 
         self.fit_self(X_unlab, p_m=self.params["p_m"], alpha=self.params["alpha"])
-        return self.fit_semi(X, y, X, X_val, y_val, p_m=self.params["p_m"], K=self.params["K"], beta=self.params["beta"])
+        loss_history, val_loss_history = self.fit_semi(X, y, X, X_val, y_val, p_m=self.params["p_m"],
+                                                       K=self.params["K"], beta=self.params["beta"])
 
-    def predict(self, X):
         self.load_model(filename_extension="best", directory="tmp")
+        return loss_history, val_loss_history
+
+    def predict_helper(self, X):
         self.model_self.eval()
         self.model_semi.eval()
 
-        # For some reason this has to be set explicitly to work with categorical data
         X = np.array(X, dtype=np.float)
         X = torch.tensor(X).float()
 
         test_dataset = TensorDataset(X)
-        test_loader = DataLoader(dataset=test_dataset, batch_size=self.args.val_batch_size, shuffle=True, num_workers=2)
+        test_loader = DataLoader(dataset=test_dataset, batch_size=self.args.val_batch_size, shuffle=False,
+                                 num_workers=2)
 
-        self.predictions = []
+        predictions = []
 
         with torch.no_grad():
             for batch_X in test_loader:
@@ -49,10 +52,8 @@ class VIME(BaseModelTorch):
                 if self.args.objective == "binary":
                     preds = torch.sigmoid(preds)
 
-                self.predictions.append(preds.detach().cpu().numpy())
-
-        self.predictions = np.concatenate(self.predictions)
-        return self.predictions
+                predictions.append(preds.detach().cpu().numpy())
+        return np.concatenate(predictions)
 
     @classmethod
     def define_trial_parameters(cls, trial, args):

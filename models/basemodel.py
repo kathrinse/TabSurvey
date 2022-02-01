@@ -54,6 +54,7 @@ class BaseModel:
 
         # Create a placeholder for the predictions on the test dataset
         self.predictions = None
+        self.prediction_probabilities = None  # Only used by binary / multi-class-classification
 
     def fit(self, X: np.ndarray, y: np.ndarray, X_val: tp.Union[None, np.ndarray] = None,
             y_val: tp.Union[None, np.ndarray] = None) -> tp.Tuple[list, list]:
@@ -77,24 +78,40 @@ class BaseModel:
         # Should return loss history and validation loss history
         return [], []
 
-    def predict(self, X: np.ndarray) -> np.ndarray:
-        """Makes predictions using the trained model.
-
-        The labels of the test dataset (X) are predicted. The outcomes are saved for later (self.predictions) and
-        also returned.
-
-        If the task is binary or multi-class classification, not the concrete class but the probability distribution
-        over the classes is returned.
+    def predict(self, X: np.ndarray) -> tp.Tuple[np.ndarray, np.ndarray]:
+        """
+        Returns the regression value or the concrete classes of binary / multi-class-classification tasks.
+        (Save predictions to self.predictions)
 
         :param X: test data
-        :return: predicted labels of test data
+        :return: predicted values / classes of test data (Shape N x 1)
         """
+
         if self.args.objective == "regression":
             self.predictions = self.model.predict(X)
         elif self.args.objective == "classification" or self.args.objective == "binary":
-            self.predictions = self.model.predict_proba(X)
+            self.prediction_probabilities = self.predict_proba(X)
+            self.predictions = np.argmax(self.prediction_probabilities, axis=1)
 
         return self.predictions
+
+    def predict_proba(self, X: np.ndarray) -> np.ndarray:
+        """
+        Only implemented for binary / multi-class-classification tasks.
+        Returns the probability distribution over the classes C.
+        (Save probabilities to self.prediction_probabilities)
+
+        :param X: test data
+        :return: probabilities for the classes (Shape N x C)
+        """
+
+        self.prediction_probabilities = self.model.predict_proba(X)
+
+        # If binary task returns only probability for the true class, adapt it to return (N x 2)
+        if self.prediction_probabilities.shape[1] == 1:
+            self.prediction_probabilities = np.concatenate((1 - self.prediction_probabilities,
+                                                            self.prediction_probabilities), 1)
+        return self.prediction_probabilities
 
     def save_model_and_predictions(self, y_true: np.ndarray, filename_extension=""):
         """Saves the current state of the model and the predictions and true labels of the test dataset.
@@ -160,13 +177,15 @@ class BaseModel:
         raise NotImplementedError("Computation of model size has not been implemented for this model.")
 
     def attribute(cls, X: np.ndarray, y: np.ndarray, strategy: str = "") -> np.ndarray:
-        """Get feature attributions for inherently interpretable models. This function is only implemented for interpretable models.
+        """Get feature attributions for inherently interpretable models. This function is only implemented for
+        interpretable models.
 
         :param X: data (Shape N x D)
-        :param y: labels (Shape N) for which the attribution should be computed for (usage of these labels depends on the specific model)
+        :param y: labels (Shape N) for which the attribution should be computed for (
+        usage of these labels depends on the specific model)
 
-        :strategy: if there are different strategies that can be used to compute the attributions they can be passed here. 
-                    Passing an empty sting should always result in the default strategy.
+        :strategy: if there are different strategies that can be used to compute the attributions they can be passed
+        here. Passing an empty sting should always result in the default strategy.
 
         :return The (non-normalized) importance attributions for each feature in each data point. (Shape N x D)
         """

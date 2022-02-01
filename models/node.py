@@ -128,10 +128,10 @@ class NODE(BaseModelTorch):
                 print("Best Val Loss: %0.5f" % best_loss)
                 break
 
+        self.trainer.load_checkpoint(tag="best")
         return loss_history, val_loss_history
 
-    def predict(self, X):
-        self.trainer.load_checkpoint(tag="best")
+    def predict_helper(self, X):
         X_test = torch.as_tensor(np.array(X, dtype=np.float), device=self.device, dtype=torch.float32)
         self.model.train(False)
         with torch.no_grad():

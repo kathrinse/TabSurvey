@@ -23,9 +23,9 @@ class MLP(BaseModelTorch):
 
         return super().fit(X, y, X_val, y_val)
 
-    def predict(self, X):
+    def predict_helper(self, X):
         X = np.array(X, dtype=np.float)
-        return super().predict(X)
+        return super().predict_helper(X)
 
     @classmethod
     def define_trial_parameters(cls, trial, args):

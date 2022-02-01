@@ -76,14 +76,14 @@ class NAM(BaseModelTorch):
 
         return metrics_callback.train_loss, metrics_callback.val_loss
 
-    def predict(self, X):
+    def predict_helper(self, X):
         X = np.array(X, dtype=np.float)
         test_dataset = torch.utils.data.TensorDataset(torch.tensor(X).float())
         testloader = torch.utils.data.DataLoader(test_dataset, batch_size=self.args.val_batch_size, shuffle=False)
 
         self.model.eval()
 
-        self.predictions = []
+        predictions = []
         with torch.no_grad():
             for batch_X in testloader:
                 preds = self.model(batch_X[0])[0]  # .to(self.device)
@@ -91,10 +91,9 @@ class NAM(BaseModelTorch):
                 if self.args.objective == "binary":
                     preds = torch.sigmoid(preds)
 
-                self.predictions.append(preds)  # .detach().cpu().numpy()
+                predictions.append(preds)  # .detach().cpu().numpy()
 
-        self.predictions = np.concatenate(self.predictions).reshape(-1, 1)
-        return self.predictions
+        return np.concatenate(predictions).reshape(-1, 1)
 
     @classmethod
     def define_trial_parameters(cls, trial, args):

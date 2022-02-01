@@ -53,9 +53,8 @@ class DeepGBM(BaseModelTorch):
 
         return loss_history, val_loss_history
 
-    def predict(self, X):
-        self.predictions = predict(self.model, X, self.ce, self.ne).reshape(-1, 1)
-        return self.predictions
+    def predict_helper(self, X):
+        return predict(self.model, X, self.ce, self.ne).reshape(-1, 1)
 
     @classmethod
     def define_trial_parameters(cls, trial, args):

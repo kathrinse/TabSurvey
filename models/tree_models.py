@@ -2,6 +2,8 @@ import xgboost as xgb
 import catboost as cat
 import lightgbm as lgb
 
+import numpy as np
+
 from models.basemodel import BaseModel
 
 '''
@@ -47,13 +49,18 @@ class XGBoost(BaseModel):
         return [], []
 
     def predict(self, X):
-        test = xgb.DMatrix(X)
-        self.predictions = self.model.predict(test)
+        X = xgb.DMatrix(X)
+        return super().predict(X)
+
+    def predict_proba(self, X):
+        probabilities = self.model.predict(X)
 
         if self.args.objective == "binary":
-            self.predictions = self.predictions.reshape(-1, 1)
+            probabilities = probabilities.reshape(-1, 1)
+            probabilities = np.concatenate((1 - probabilities, probabilities), 1)
 
-        return self.predictions
+        self.prediction_probabilities = probabilities
+        return self.prediction_probabilities
 
     @classmethod
     def define_trial_parameters(cls, trial, args):
@@ -113,7 +120,6 @@ class CatBoost(BaseModel):
 
         return super().predict(X)
 
-
     @classmethod
     def define_trial_parameters(cls, trial, args):
         params = {
@@ -157,14 +163,15 @@ class LightGBM(BaseModel):
 
         return [], []
 
-    def predict(self, X):
-        # Predicts probabilities if the task is classification
-        self.predictions = self.model.predict(X)
+    def predict_proba(self, X):
+        probabilities = self.model.predict(X)
 
         if self.args.objective == "binary":
-            self.predictions = self.predictions.reshape(-1, 1)
+            probabilities = probabilities.reshape(-1, 1)
+            probabilities = np.concatenate((1 - probabilities, probabilities), 1)
 
-        return self.predictions
+        self.prediction_probabilities = probabilities
+        return self.prediction_probabilities
 
     @classmethod
     def define_trial_parameters(cls, trial, args):

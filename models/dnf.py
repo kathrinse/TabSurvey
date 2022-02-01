@@ -77,7 +77,7 @@ class DNFNet(BaseModel):
 
         return loss, val_loss
 
-    def predict(self, X):
+    def predict_proba(self, X):
         assert os.path.exists(self.weights_dir + '/model_weights.ckpt.meta')
 
         if os.path.exists(self.weights_dir + '/model_weights.ckpt.meta'):
@@ -99,8 +99,13 @@ class DNFNet(BaseModel):
         # Sort the predictions!
         y_pred_sorted = [y_pred for _, y_pred in sorted(zip(y[:, 0], y_pred))]
 
-        self.predictions = np.concatenate(y_pred_sorted, axis=0).reshape(-1, self.args.num_classes)
-        return self.predictions
+        self.prediction_probabilities = np.concatenate(y_pred_sorted, axis=0).reshape(-1, self.args.num_classes)
+
+        if self.args.objective == "binary":
+            self.prediction_probabilities = np.concatenate((1 - self.prediction_probabilities,
+                                                            self.prediction_probabilities), 1)
+
+        return self.prediction_probabilities
 
     def save_model(self, filename_extension="", directory="models"):
         filename = get_output_path(self.args, directory=directory, filename="m", extension=filename_extension,

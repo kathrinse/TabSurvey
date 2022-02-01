@@ -17,10 +17,6 @@ class DeepFM(BaseModelTorch):
             import sys
             sys.exit()
 
-        #self.device = torch.device('cuda' if args.use_gpu and torch.cuda.is_available() else 'cpu')
-        # print("On Device:", device)
-        #gpus = args.gpu_ids if args.data_parallel else None
-
         if args.cat_idx:
             dense_features = list(set(range(args.num_features)) - set(args.cat_idx))
             fixlen_feature_columns = [SparseFeat(str(feat), args.cat_dims[idx])
@@ -68,17 +64,14 @@ class DeepFM(BaseModelTorch):
                                                         patience=self.args.early_stopping_rounds)
         return loss_history, val_loss_history
 
-    def predict(self, X):
+    def predict_helper(self, X):
         X = np.array(X, dtype=np.float)
         X_dict = {str(name): X[:, name] for name in range(self.args.num_features)}
 
         # Adding dummy spare feature
         if not self.args.cat_idx:
             X_dict["dummy"] = np.zeros(X.shape[0])
-
-        preds = self.model.predict(X_dict, batch_size=self.args.batch_size)
-        self.predictions = preds
-        return self.predictions
+        return self.model.predict(X_dict, batch_size=self.args.batch_size)
 
     @classmethod
     def define_trial_parameters(cls, trial, args):

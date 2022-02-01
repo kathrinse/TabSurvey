@@ -28,13 +28,10 @@ class STG(BaseModelTorch):
         loss, val_loss = self.model.fit(X, y, nr_epochs=self.args.epochs, valid_X=X_val, valid_y=y_val,
                                         print_interval=1)  # self.args.logging_period # early_stop=True
 
-        print("Loss", loss)
-        print("Val loss", val_loss)
         return loss, val_loss
 
-    def predict(self, X):
-        self.predictions = self.model.predict(X)
-        return self.predictions
+    def predict_helper(self, X):
+        return self.model.predict(X)
 
     def save_model(self, filename_extension="", directory="models"):
         filename = get_output_path(self.args, directory=directory, filename="m", extension=filename_extension,

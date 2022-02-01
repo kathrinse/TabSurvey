@@ -27,7 +27,7 @@ class BaseModelTorch(BaseModel):
     def get_device(self):
         if self.args.use_gpu and torch.cuda.is_available():
             if self.args.data_parallel:
-                device = "cuda" # + ''.join(str(i) + ',' for i in self.args.gpu_ids)[:-1]
+                device = "cuda"  # + ''.join(str(i) + ',' for i in self.args.gpu_ids)[:-1]
             else:
                 device = 'cuda'
         else:
@@ -112,18 +112,37 @@ class BaseModelTorch(BaseModel):
                 print("Early stopping applies.")
                 break
 
+        # Load best model
+        self.load_model(filename_extension="best", directory="tmp")
         return loss_history, val_loss_history
 
     def predict(self, X):
-        self.load_model(filename_extension="best", directory="tmp")
+        if self.args.objective == "regression":
+            self.predictions = self.predict_helper(X)
+        else:
+            self.predict_proba(X)
+            self.predictions = np.argmax(self.prediction_probabilities, axis=1)
+
+        return self.predictions
+
+    def predict_proba(self, X: np.ndarray) -> np.ndarray:
+        probas = self.predict_helper(X)
+
+        # If binary task returns only probability for the true class, adapt it to return (N x 2)
+        if probas.shape[1] == 1:
+            probas = np.concatenate((1 - probas, probas), 1)
+
+        self.prediction_probabilities = probas
+        return self.prediction_probabilities
+
+    def predict_helper(self, X):
         self.model.eval()
 
         X = torch.tensor(X).float()
         test_dataset = TensorDataset(X)
         test_loader = DataLoader(dataset=test_dataset, batch_size=self.args.val_batch_size, shuffle=False,
                                  num_workers=2)
-
-        self.predictions = []
+        predictions = []
         with torch.no_grad():
             for batch_X in test_loader:
                 preds = self.model(batch_X[0].to(self.device))
@@ -131,10 +150,8 @@ class BaseModelTorch(BaseModel):
                 if self.args.objective == "binary":
                     preds = torch.sigmoid(preds)
 
-                self.predictions.append(preds.detach().cpu().numpy())
-
-        self.predictions = np.concatenate(self.predictions)
-        return self.predictions
+                predictions.append(preds.detach().cpu().numpy())
+        return np.concatenate(predictions)
 
     def save_model(self, filename_extension="", directory="models"):
         filename = get_output_path(self.args, directory=directory, filename="m", extension=filename_extension,
