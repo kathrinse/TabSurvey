@@ -8,7 +8,7 @@ See the [Deep Neural Networks and Tabular Data: A Survey](https://arxiv.org/abs/
 ### Using the docker container
 
 The code is designed to run inside a docker container. See the `Dockerfile`.
-In the docker file different conda environments are specified for the different 
+In the docker file, different conda environments are specified for the various 
 requirements of the models. Therefore, building the container for the first time takes a
 while.
 
@@ -75,7 +75,7 @@ want to run and then call:
 
 The framework provides implementations to compute feature attribution explanations for several models.
 Additionally, the feature attributions can be automatically compared to SHAP values and a global ablation 
-test which successively perturbs the most important features, can be run. The same parameters as before can passed, but
+test which successively perturbs the most important features, can be run. The same parameters as before can be passed, but
 with some additions:
 
 `attribute.py --model_name <Name of the Model> [--globalbenchmark] [--compareshap] [--numruns <int>] [--strategy diag]`
@@ -125,3 +125,17 @@ It is recommended to specify the remaining hyperparameters here as well.
 ----------------------------
 
 <!-- ![Architecture of the docker container](Docker_architecture.png) -->
+
+
+
+
+## Citation  
+If you use this codebase, please cite our work:
+```
+@article{borisov2021deep,
+  title={Deep neural networks and tabular data: A survey},
+  author={Borisov, Vadim and Leemann, Tobias and Se{\ss}ler, Kathrin and Haug, Johannes and Pawelczyk, Martin and Kasneci, Gjergji},
+  journal={arXiv preprint arXiv:2110.01889},
+  year={2021}
+}
+```
