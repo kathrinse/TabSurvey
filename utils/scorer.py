@@ -72,10 +72,11 @@ class ClassScorer(Scorer):
 
     def eval(self, y_true, y_prediction, y_probabilities):
         logloss = log_loss(y_true, y_probabilities)
-        auc = roc_auc_score(y_true, y_probabilities, multi_class='ovr')
+        # auc = roc_auc_score(y_true, y_probabilities, multi_class='ovr')
+        auc = roc_auc_score(y_true, y_probabilities, multi_class='ovo', average="macro")
 
         acc = accuracy_score(y_true, y_prediction)
-        f1 = f1_score(y_true, y_prediction, average="micro")  # use here macro or weighted?
+        f1 = f1_score(y_true, y_prediction, average="weighted")  # use here macro or weighted?
 
         self.loglosses.append(logloss)
         self.aucs.append(auc)

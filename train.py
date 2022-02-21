@@ -44,9 +44,9 @@ def cross_validation(model, X, y, args, save_model=False):
         test_timer.end()
 
         # Save model weights and the truth/prediction pairs for traceability
-        if save_model:
-            curr_model.save_model_and_predictions(y_test, i)
+        curr_model.save_model_and_predictions(y_test, i)
 
+        if save_model:
             save_loss_to_file(args, loss_history, "loss", extension=i)
             save_loss_to_file(args, val_loss_history, "val_loss", extension=i)
 

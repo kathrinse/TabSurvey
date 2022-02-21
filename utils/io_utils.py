@@ -57,10 +57,14 @@ def save_results_to_file(args, results, train_time=None, test_time=None, best_pa
         for key, value in results.items():
             text_file.write("%s: %.5f\n" % (key, value))
 
-        text_file.write("\nTrain time: %f\n" % train_time)
-        text_file.write("Test time: %f\n" % test_time)
+        if train_time:
+            text_file.write("\nTrain time: %f\n" % train_time)
 
-        text_file.write("\nBest Parameters: %s\n\n\n" % best_params)
+        if test_time:
+            text_file.write("Test time: %f\n" % test_time)
+
+        if best_params:
+            text_file.write("\nBest Parameters: %s\n\n\n" % best_params)
 
 
 def save_hyperparameters_to_file(args, params, results, time=None):
@@ -101,3 +105,15 @@ def get_output_path(args, filename, file_type, directory=None, extension=None):
     # For example: .../m_3.pkl
 
     return file_path
+
+
+def get_predictions_from_file(args):
+    dir_path = output_dir + args.model_name + "/" + args.dataset + "/predictions"
+
+    files = os.listdir(dir_path)
+    content = []
+
+    for file in files:
+        content.append(np.load(dir_path + "/" + file))
+
+    return content
