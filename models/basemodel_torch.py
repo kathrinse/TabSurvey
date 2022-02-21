@@ -165,7 +165,7 @@ class BaseModelTorch(BaseModel):
         self.model.load_state_dict(state_dict)
 
     def get_model_size(self):
-        model_size = sum(t.numel() for t in self.model.parameters())
+        model_size = sum(t.numel() for t in self.model.parameters() if t.requires_grad)
         return model_size
 
     @classmethod

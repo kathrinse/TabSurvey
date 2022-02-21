@@ -249,13 +249,13 @@ parameters: {
             learning_rate: 7.0e-4
         },
         TabNet: {
-            n_d: 12,
-            n_steps: 6,
-            gamma: 1.85,
+            n_d: 64,
+            n_steps: 5,
+            gamma: 1.5,
             cat_emb_dim: 1,
-            n_independent: 1,
-            n_shared: 5,
-            momentum: 0.02,
+            n_independent: 2,
+            n_shared: 2,
+            momentum: 0.7,
             mask_type: entmax
         },
         VIME: {

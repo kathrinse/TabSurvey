@@ -1,3 +1,8 @@
+all_models = ["LinearModel", "KNN", "DecisionTree", "RandomForest", "XGBoost", "CatBoost", "LightGBM", "ModelTree",
+               "MLP", "TabNet", "VIME", "TabTransformer", "NODE", "DeepGBM", "RLN", "DNFNet", "STG", "NAM", "DeepFM",
+               "SAINT"]
+
+
 def str2model(model):
 
     if model == "LinearModel":

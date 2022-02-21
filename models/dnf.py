@@ -32,6 +32,7 @@ class DNFNet(BaseModel):
             'epochs': args.epochs,
             'early_stopping_patience': args.early_stopping_rounds,
             'batch_size': args.batch_size,
+            'GPU': str(args.gpu_ids),
             **self.params
         })
 
@@ -39,6 +40,8 @@ class DNFNet(BaseModel):
             'score_metric': log_loss,
             'score_increases': False,
         })
+
+        print(self.config)
 
         os.environ["CUDA_VISIBLE_DEVICES"] = self.config['GPU']
         tf.reset_default_graph()
@@ -118,6 +121,20 @@ class DNFNet(BaseModel):
             shutil.rmtree(filename)
 
         shutil.copytree(self.weights_dir, filename)  # , dirs_exist_ok=True
+
+    def get_model_size(self):
+        total_parameters = 0
+        for variable in tf.trainable_variables():
+            # shape is an array of tf.Dimension
+            shape = variable.get_shape()
+            variable_parameters = 1
+            for dim in shape:
+                variable_parameters *= dim.value
+            total_parameters += variable_parameters
+        print(total_parameters)
+
+        return total_parameters
+
 
     @classmethod
     def define_trial_parameters(cls, trial, args):

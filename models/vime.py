@@ -120,7 +120,7 @@ class VIME(BaseModelTorch):
                                   drop_last=True)
 
         val_dataset = TensorDataset(X_val, y_val)
-        val_loader = DataLoader(dataset=val_dataset, batch_size=self.args.val_batch_size, shuffle=True)
+        val_loader = DataLoader(dataset=val_dataset, batch_size=self.args.val_batch_size, shuffle=False)
 
         min_val_loss = float("inf")
         min_val_loss_idx = 0
@@ -204,6 +204,11 @@ class VIME(BaseModelTorch):
                                         file_type="pt")
         state_dict = torch.load(filename_semi)
         self.model_semi.load_state_dict(state_dict)
+
+    def get_model_size(self):
+        self_size = sum(t.numel() for t in self.model_self.parameters() if t.requires_grad)
+        semi_size = sum(t.numel() for t in self.model_semi.parameters() if t.requires_grad)
+        return self_size + semi_size
 
 
 class VIMESelf(nn.Module):

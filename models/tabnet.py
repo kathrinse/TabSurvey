@@ -50,6 +50,11 @@ class TabNet(BaseModelTorch):
     def load_model(self, filename_extension=""):
         self.model = load_model_from_file(self.model, self.args, filename_extension)
 
+    def get_model_size(self):
+        # To get the size, the model has be trained for at least one epoch
+        model_size = sum(t.numel() for t in self.model.network.parameters() if t.requires_grad)
+        return model_size
+
     @classmethod
     def define_trial_parameters(cls, trial, args):
         params = {

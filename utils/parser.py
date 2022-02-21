@@ -43,6 +43,8 @@ def get_parser():
     parser.add('--num_features', type=int, required=True, help="Set the total number of features.")
     parser.add('--num_classes', type=int, default=1, help="Set the number of classes in a classification task.")
     parser.add('--cat_idx', type=int, action="append", help="Indices of the categorical features")
+    parser.add('--cat_dims', type=int, action="append", help="Cardinality of the categorical features (is set "
+                                                             "automatically, when the load_data function is used.")
 
     # Todo: Validate the arguments
 

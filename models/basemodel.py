@@ -169,12 +169,12 @@ class BaseModel:
             y = np.concatenate((y_true.reshape(-1, 1), self.predictions.reshape(-1, 1)), axis=1)
         else:
             # Save array where [:,0] is the truth and [:,1:] are the prediction probabilities
-            y = np.concatenate((y_true.reshape(-1, 1), self.predictions), axis=1)
+            y = np.concatenate((y_true.reshape(-1, 1), self.prediction_probabilities), axis=1)
 
         save_predictions_to_file(y, self.args, filename_extension)
 
     def get_model_size(self):
-        raise NotImplementedError("Computation of model size has not been implemented for this model.")
+        raise NotImplementedError("Calculation of model size has not been implemented for this model.")
 
     def attribute(cls, X: np.ndarray, y: np.ndarray, strategy: str = "") -> np.ndarray:
         """Get feature attributions for inherently interpretable models. This function is only implemented for

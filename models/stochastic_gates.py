@@ -38,6 +38,11 @@ class STG(BaseModelTorch):
                                    file_type="pt")
         torch.save(self.model._model.state_dict(), filename)
 
+    def get_model_size(self):
+        model_size = sum(t.numel() for t in self.model._model.parameters() if t.requires_grad)
+        return model_size
+
+
     @classmethod
     def define_trial_parameters(cls, trial, args):
         params = {

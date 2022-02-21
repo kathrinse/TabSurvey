@@ -40,10 +40,11 @@ class RLN(BaseModel):
         X = np.asarray(X).astype('float32')
         X_val = np.asarray(X_val).astype('float32')
 
-        # Needs the targets one hot encoded
-        ohe = OneHotEncoder(sparse=False, handle_unknown='ignore')
-        y = ohe.fit_transform(y.reshape(-1, 1))
-        y_val = ohe.transform(y_val.reshape(-1, 1))
+        if self.args.objective == "classification":
+            # Needs the classification targets one hot encoded
+            ohe = OneHotEncoder(sparse=False, handle_unknown='ignore')
+            y = ohe.fit_transform(y.reshape(-1, 1))
+            y_val = ohe.transform(y_val.reshape(-1, 1))
 
         history = self.model.fit(X, y, validation_data=(X_val, y_val))
         # Early Stopping has to be defined in the RLN_Model method
@@ -62,6 +63,9 @@ class RLN(BaseModel):
         filename = get_output_path(self.args, directory=directory, filename="m", extension=filename_extension,
                                    file_type="h5")
         self.model.model.save(filename)
+
+    def get_model_size(self):
+        return 0
 
     @classmethod
     def define_trial_parameters(cls, trial, args):
