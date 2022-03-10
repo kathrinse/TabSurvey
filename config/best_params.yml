@@ -259,24 +259,24 @@ parameters: {
             mask_type: entmax
         },
         VIME: {
-            p_m: 0.3,
-            K: 3,
-            alpha: 1,
-            beta: 1
+            p_m: 0.112,
+            K: 20,
+            alpha: 2.75,
+            beta: 3.24
         },
         TabTransformer: {
-            dim: 256,
-            depth: 6,
-            heads: 4,
-            weight_decay: -2,
-            learning_rate: -3,
-            dropout: 0.3
+            dim: 64,
+            depth: 12,
+            heads: 8,
+            weight_decay: -1,
+            learning_rate: -5,
+            dropout: 0.4
         },
         NODE: {
             num_layers: 2,
             total_tree_count: 2048,
-            tree_depth: 2,
-            tree_output_dim: 3
+            tree_depth: 6,
+            tree_output_dim: 2
         },
         DeepGBM: {
             n_trees: 100,
@@ -285,9 +285,9 @@ parameters: {
             loss_dr: 0.9
         },
         RLN: {
-            layers: 2,
-            theta: -11,
-            log_lr: 6,
+            layers: 8,
+            theta: -12,
+            log_lr: 5,
             norm: 2
         },
         DNFNet: {
