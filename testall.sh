@@ -1,7 +1,7 @@
 #!/bin/bash
 
 N_TRIALS=2
-EPOCHS=2
+EPOCHS=3
 
 SKLEARN_ENV="sklearn"
 GBDT_ENV="gbdt"
@@ -31,10 +31,11 @@ MODELS=( ["LinearModel"]=$SKLEARN_ENV
          ["DeepGBM"]=$TORCH_ENV
          ["RLN"]=$KERAS_ENV
          ["DNFNet"]=$KERAS_ENV
-         # ["STG"]=$TORCH_ENV
-         # ["NAM"]=$TORCH_ENV
-         # ["DeepFM"]=$TORCH_ENV
-         # ["SAINT"]=$TORCH_ENV
+         ["STG"]=$TORCH_ENV
+         ["NAM"]=$TORCH_ENV
+         ["DeepFM"]=$TORCH_ENV
+         ["SAINT"]=$TORCH_ENV
+         ["DANet"]=$TORCH_ENV
           )
 
 CONFIGS=( "config/adult.yml"
@@ -42,12 +43,6 @@ CONFIGS=( "config/adult.yml"
           "config/california_housing.yml"
           "config/higgs.yml"
           )
-
-# Some models take forever for the classification dataset...
-EXCEPT=("TabNet") # "KNN"
-
-#echo "${!MODELS[@]}"
-#echo "${CONFIGS[@]}"
 
 # conda init bash
 eval "$(conda shell.bash hook)"
@@ -59,11 +54,6 @@ for config in "${CONFIGS[@]}"; do
     printf 'Training %s with %s in env %s\n\n' "$model" "$config" "${MODELS[$model]}"
 
     conda activate "${MODELS[$model]}"
-
-    if [[ "$config" == "config/covertype.yml" ]] && [[ "${EXCEPT[*]}" =~ ${model} ]]; then
-      printf "Not executing this..."
-      continue
-    fi
 
     python train.py --config "$config" --model_name "$model" --n_trials $N_TRIALS --epochs $EPOCHS
 

@@ -85,7 +85,7 @@ class NODE(BaseModelTorch):
 
         early_stopping = self.args.early_stopping_rounds + self.args.logging_period
 
-        for batch in node_lib.iterate_minibatches(data.X_train, data.y_train, batch_size=64, shuffle=True,
+        for batch in node_lib.iterate_minibatches(data.X_train, data.y_train, batch_size=self.args.batch_size, shuffle=True,
                                                   epochs=self.args.epochs):
 
             metrics = self.trainer.train_on_batch(*batch, device=self.device)

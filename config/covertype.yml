@@ -1,26 +1,26 @@
 # General parameters
 dataset: Covertype
-model_name: STG # LinearModel, KNN, SVM, DecisionTree, RandomForest, XGBoost, CatBoost, LightGBM,
+model_name: CatBoost # DecisionTree, KNN, SVM, DecisionTree, RandomForest, XGBoost, CatBoost, LightGBM,
     # ModelTree, TabNet, VIME, TabTransformer, RLN, DNFNet, STG, NAM, DeepFM, SAINT
 objective: classification # Don't change
 
 # GPU parameters
-use_gpu: 'false'
+use_gpu: False
 gpu_ids: [0, 1]
-data_parallel: 'true'
+data_parallel: True
 
 # Optuna parameters - https://optuna.org/
-n_trials: 1
+n_trials: 100
 direction: minimize
 
 # Cross validation parameters
 num_splits: 5
-shuffle: 'true'
+shuffle: True
 seed: 221 # Don't change
 
 # Preprocessing parameters
-scale: 'true'
-target_encode: 'true'
+scale: True
+target_encode: True
 
 # Training parameters
 batch_size: 128
