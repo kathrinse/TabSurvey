@@ -190,6 +190,7 @@ def define_device(device_name):
     else:
         return device_name
 
+
 def normalize_reg_label(label, mu, std):
     norm_label = ((label - mu) / std).astype(np.float32)
     norm_label = norm_label.reshape(-1, 1)

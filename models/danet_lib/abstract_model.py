@@ -368,7 +368,7 @@ class DANsModel(BaseEstimator):
                   }
 
         self.network = DANet(self.input_dim, self.output_dim, **params)
-        if self.n_gpu > 1 and self.device == 'cuda':
+        if self.n_gpu > 1 and (self.device == 'cuda' or self.device == torch.device("cuda")):
             self.network = DataParallel(self.network)
         self.network = self.network.to(self.device)
 

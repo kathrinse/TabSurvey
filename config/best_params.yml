@@ -49,10 +49,10 @@ parameters: {
             mask_type: entmax
         },
         VIME: {
-            p_m: 0.3,
-            K: 3,
-            alpha: 1,
-            beta: 1
+            p_m: 0.113,
+            K: 15,
+            alpha: 9.83,
+            beta: 0.313
         },
         TabTransformer: {
             dim: 128,
@@ -103,7 +103,13 @@ parameters: {
             depth: 1,
             heads: 2,
             dropout: 0.6
-        }
+        },
+        DANet: {
+            layer: 8,
+            base_outdim: 96,
+            k: 4,
+            drop_rate: 0
+        },
     },
     CaliforniaHousing: {
         LinearModel: { },
@@ -154,10 +160,10 @@ parameters: {
             mask_type: entmax
         },
         VIME: {
-            p_m: 0.3,
-            K: 3,
-            alpha: 1,
-            beta: 1
+            p_m: 0.825,
+            K: 5,
+            alpha: 9.26,
+            beta: 0.104
         },
         TabTransformer: {
             dim: 256,
@@ -208,7 +214,13 @@ parameters: {
             depth: 1,
             heads: 2,
             dropout: 0.6
-        }
+        },
+        DANet: {
+            layer: 10,
+            base_outdim: 96,
+            k: 3,
+            drop_rate: 0
+        },
     },
     Covertype: {
         LinearModel: { },
@@ -220,7 +232,7 @@ parameters: {
         },
         RandomForest: {
             max_depth: 12,
-            n_estimators: 24
+            n_estimators: 48
         },
         XGBoost: {
             max_depth: 12,
@@ -274,9 +286,9 @@ parameters: {
         },
         NODE: {
             num_layers: 2,
-            total_tree_count: 2048,
-            tree_depth: 6,
-            tree_output_dim: 2
+            total_tree_count: 1024,
+            tree_depth: 8,
+            tree_output_dim: 3
         },
         DeepGBM: {
             n_trees: 100,

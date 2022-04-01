@@ -82,6 +82,9 @@ RUN /opt/conda/envs/torch/bin/python -m pip install stg==0.1.2
 RUN /opt/conda/envs/torch/bin/python -m pip install https://github.com/AmrMKayid/nam/archive/main.zip
 RUN /opt/conda/envs/torch/bin/python -m pip install tabulate
 
+# For DANet
+RUN /opt/conda/envs/torch/bin/python -m pip install yacs
+
 #############################################################################################################
 
 # Download code into container

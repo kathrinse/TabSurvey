@@ -60,7 +60,7 @@ class DANet(BaseModelTorch):
             self.mu, self.std = y.mean(), y.std()
             print("mean = %.5f, std = %.5f" % (self.mu, self.std))
             y = normalize_reg_label(y, self.std, self.mu)
-            y_val = normalize_reg_label(y, self.std, self.mu)
+            y_val = normalize_reg_label(y_val, self.std, self.mu)
 
             # Set Std for Regression Model
             self.model.std = self.std
@@ -85,7 +85,7 @@ class DANet(BaseModelTorch):
         X = np.array(X, dtype=np.float)
         preds = self.model.predict(X)
 
-        # Get true prediction values! (Regression label is normalized during training)
+        # How to get the un-normalized prediction? (Regression label is normalized during training)
         preds = preds * self.std + self.mu
         return preds
 
