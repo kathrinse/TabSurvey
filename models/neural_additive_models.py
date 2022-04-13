@@ -87,6 +87,7 @@ class NAM(BaseModelTorch):
         testloader = torch.utils.data.DataLoader(test_dataset, batch_size=self.args.val_batch_size, shuffle=False)
 
         self.model.eval()
+        self.model.to(self.device)
 
         predictions = []
         with torch.no_grad():

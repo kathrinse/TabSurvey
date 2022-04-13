@@ -23,7 +23,7 @@ class DANet(BaseModelTorch):
     def __init__(self, params, args):
         super().__init__(params, args)
 
-        os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu_ids[0]
+        os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu_ids)
         self.n_gpu = len(args.gpu_ids)
 
         # No distinction between binary and multiclass classification
