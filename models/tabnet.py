@@ -4,6 +4,12 @@ import torch
 from models.basemodel_torch import BaseModelTorch
 from utils.io_utils import save_model_to_file, load_model_from_file
 
+'''
+    TabNet: Attentive Interpretable Tabular Learning (https://arxiv.org/pdf/1908.07442.pdf)
+
+    See the implementation: https://github.com/dreamquark-ai/tabnet
+'''
+
 
 class TabNet(BaseModelTorch):
 

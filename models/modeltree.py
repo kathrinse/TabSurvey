@@ -4,7 +4,10 @@ from models.basemodel import BaseModel
 import numpy as np
 
 '''
-    Define the Model Trees Model from Schufa. https://github.com/schufa-innovationlab/model-trees
+    A Gradient-Based Split Criterion for Highly Accurate and Transparent Model Trees 
+    (https://www.ijcai.org/proceedings/2019/0281.pdf)
+    
+    See the implementation: https://github.com/schufa-innovationlab/model-trees
 '''
 
 

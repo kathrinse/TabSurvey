@@ -13,6 +13,13 @@ from models.dnf_lib.Utils.NumpyGenerator import NumpyGenerator
 from models.dnf_lib.Utils.experiment_utils import create_model, create_experiment_directory
 
 
+'''
+    Net-DNF: Effective Deep Modeling of Tabular Data  (https://openreview.net/forum?id=73WTGs96kho)
+    
+    Code adapted from: https://github.com/amramabutbul/DisjunctiveNormalFormNet
+'''
+
+
 class DNFNet(BaseModel):
 
     def __init__(self, params, args):

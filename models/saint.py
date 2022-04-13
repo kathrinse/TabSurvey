@@ -15,6 +15,13 @@ from models.saint_lib.models.pretrainmodel import SAINT as SAINTModel
 from models.saint_lib.data_openml import DataSetCatCon
 from models.saint_lib.augmentations import embed_data_mask
 
+'''
+    SAINT: Improved Neural Networks for Tabular Data via Row Attention and Contrastive Pre-Training
+    (https://arxiv.org/abs/2106.01342)
+    
+    Code adapted from: https://github.com/somepago/saint
+'''
+
 
 class SAINT(BaseModelTorch):
 

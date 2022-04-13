@@ -6,6 +6,13 @@ from .basemodel_torch import BaseModelTorch
 from .deepfm_lib.models.deepfm import DeepFM as DeepFMModel
 from .deepfm_lib.inputs import SparseFeat, DenseFeat
 
+'''
+    DeepFM: A Factorization-Machine based Neural Network for CTR Prediction
+     (https://www.ijcai.org/proceedings/2017/0239.pdf)
+     
+    Code adapted from: https://github.com/shenweichen/DeepCTR-Torch
+'''
+
 
 class DeepFM(BaseModelTorch):
 

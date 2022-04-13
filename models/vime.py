@@ -9,6 +9,14 @@ from torch.utils.data import TensorDataset, DataLoader
 from models.basemodel_torch import BaseModelTorch
 from utils.io_utils import get_output_path
 
+'''
+    VIME: Extending the Success of Self- and Semi-supervised Learning to Tabular Domain
+    (https://proceedings.neurips.cc/paper/2020/hash/7d97667a3e056acab9aaf653807b4a03-Abstract.html)
+    
+    Custom implementation using PyTorch.
+    See the original implementation using Tensorflow: https://github.com/jsyoon0823/VIME
+'''
+
 
 class VIME(BaseModelTorch):
 

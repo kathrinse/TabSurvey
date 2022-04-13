@@ -6,6 +6,12 @@ from models.basemodel_torch import BaseModelTorch
 
 import numpy as np
 
+'''
+    TabTransformer: Tabular Data Modeling Using Contextual Embeddings (https://arxiv.org/abs/2012.06678)
+    
+    Code adapted from: https://github.com/lucidrains/tab-transformer-pytorch
+'''
+
 
 class TabTransformer(BaseModelTorch):
 

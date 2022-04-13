@@ -5,6 +5,12 @@ from .stg_lib import STG as STGModel
 
 import torch
 
+'''
+    Feature Selection using Stochastic Gates (https://arxiv.org/abs/1810.04247)
+    
+    Code adapted from: https://github.com/runopti/stg
+'''
+
 
 class STG(BaseModelTorch):
 

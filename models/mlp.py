@@ -5,6 +5,10 @@ import torch.nn.functional as F
 
 from models.basemodel_torch import BaseModelTorch
 
+'''
+    Custom implementation for the standard multi-layer perceptron
+'''
+
 
 class MLP(BaseModelTorch):
 

@@ -13,6 +13,12 @@ import numpy as np
 
 from utils.io_utils import get_output_path
 
+'''
+    Neural Oblivious Decision Ensembles for Deep Learning on Tabular Data (https://arxiv.org/abs/1909.06312)
+
+    Code adapted from: https://github.com/Qwicen/node
+'''
+
 
 class NODE(BaseModelTorch):
 

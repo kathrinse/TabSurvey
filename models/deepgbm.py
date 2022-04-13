@@ -5,6 +5,13 @@ from models.deepgbm_lib.preprocess.preprocessing_cat import CatEncoder
 from models.deepgbm_lib.preprocess.preprocessing_num import NumEncoder
 import models.deepgbm_lib.config as deepgbm_config
 
+'''
+    DeepGBM: A Deep Learning Framework Distilled by GBDT for Online Prediction Tasks
+    (https://www.microsoft.com/en-us/research/publication/deepgbm-a-deep-learning-framework-distilled-by-gbdt-for-online-prediction-tasks/)
+    
+    Code adapted from: https://github.com/motefly/DeepGBM
+'''
+
 
 class DeepGBM(BaseModelTorch):
 

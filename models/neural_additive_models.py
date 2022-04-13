@@ -13,6 +13,11 @@ from pytorch_lightning.loggers import TensorBoardLogger
 
 from models.basemodel_torch import BaseModelTorch
 
+'''
+    Neural Additive Models: Interpretable Machine Learning with Neural Nets (https://arxiv.org/pdf/2004.13912.pdf)
+    Code adapted from: https://github.com/AmrMKayid/nam
+'''
+
 
 class NAM(BaseModelTorch):
 

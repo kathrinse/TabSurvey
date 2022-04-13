@@ -14,7 +14,11 @@ from keras.layers import Dense
 
 from utils.io_utils import get_output_path
 
+'''
+    Regularization Learning Networks: Deep Learning for Tabular Datasets (https://arxiv.org/abs/1805.06440)
 
+    Code adapted from: https://github.com/irashavitt/regularization_learning_networks
+'''
 class RLN(BaseModel):
 
     def __init__(self, params, args):

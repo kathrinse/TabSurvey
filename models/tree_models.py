@@ -12,7 +12,7 @@ from models.basemodel import BaseModel
 '''
 
 '''
-    XGBoost
+    XGBoost (https://xgboost.readthedocs.io/en/stable/)
 '''
 
 
@@ -74,7 +74,7 @@ class XGBoost(BaseModel):
 
 
 '''
-    CatBoost
+    CatBoost (https://catboost.ai/)
 '''
 
 
@@ -131,7 +131,7 @@ class CatBoost(BaseModel):
 
 
 '''
-    LightGBM
+    LightGBM (https://lightgbm.readthedocs.io/en/latest/)
 '''
 
 

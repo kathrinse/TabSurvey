@@ -11,6 +11,12 @@ from qhoptim.pyt import QHAdam
 
 from utils.io_utils import get_output_path
 
+'''
+    DANets: Deep Abstract Networks for Tabular Data Classification and Regression (https://arxiv.org/abs/2112.02962)
+    
+    Code adapted from: https://github.com/WhatAShot/DANet
+'''
+
 
 class DANet(BaseModelTorch):
 
