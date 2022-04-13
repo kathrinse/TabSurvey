@@ -18,6 +18,14 @@ class VIME(BaseModelTorch):
         self.model_self = VIMESelf(args.num_features).to(self.device)
         self.model_semi = VIMESemi(args, args.num_features, args.num_classes).to(self.device)
 
+        if self.args.data_parallel:
+            self.model_self = nn.DataParallel(self.model_self, device_ids=self.args.gpu_ids)
+            self.model_semi = nn.DataParallel(self.model_semi, device_ids=self.args.gpu_ids)
+
+        print("On Device:", self.device)
+
+        self.encoder_layer = None
+
     def fit(self, X, y, X_val=None, y_val=None):
         X = np.array(X, dtype=np.float)
         X_val = np.array(X_val, dtype=np.float)
@@ -25,6 +33,12 @@ class VIME(BaseModelTorch):
         X_unlab = np.concatenate([X, X_val], axis=0)
 
         self.fit_self(X_unlab, p_m=self.params["p_m"], alpha=self.params["alpha"])
+
+        if self.args.data_parallel:
+            self.encoder_layer = self.model_self.module.input_layer
+        else:
+            self.encoder_layer = self.model_self.input_layer
+
         loss_history, val_loss_history = self.fit_semi(X, y, X, X_val, y_val, p_m=self.params["p_m"],
                                                        K=self.params["K"], beta=self.params["beta"])
 
@@ -46,7 +60,7 @@ class VIME(BaseModelTorch):
 
         with torch.no_grad():
             for batch_X in test_loader:
-                X_encoded = self.model_self.input_layer(batch_X[0].to(self.device))
+                X_encoded = self.encoder_layer(batch_X[0].to(self.device))
                 preds = self.model_semi(X_encoded)
 
                 if self.args.objective == "binary":
@@ -131,7 +145,7 @@ class VIME(BaseModelTorch):
         for epoch in range(self.args.epochs):
             for i, (batch_X, batch_y, batch_unlab) in enumerate(train_loader):
 
-                batch_X_encoded = self.model_self.input_layer(batch_X.to(self.device))
+                batch_X_encoded = self.encoder_layer(batch_X.to(self.device))
                 y_hat = self.model_semi(batch_X_encoded)
 
                 yv_hats = torch.empty(K, self.args.batch_size, self.args.num_classes)
@@ -139,7 +153,7 @@ class VIME(BaseModelTorch):
                     m_batch = mask_generator(p_m, batch_unlab)
                     _, batch_unlab_tmp = pretext_generator(m_batch, batch_unlab)
 
-                    batch_unlab_encoded = self.model_self.input_layer(batch_unlab_tmp.float().to(self.device))
+                    batch_unlab_encoded = self.encoder_layer(batch_unlab_tmp.float().to(self.device))
                     yv_hat = self.model_semi(batch_unlab_encoded)
                     yv_hats[rep] = yv_hat
 
@@ -159,7 +173,7 @@ class VIME(BaseModelTorch):
             val_loss = 0.0
             val_dim = 0
             for val_i, (batch_val_X, batch_val_y) in enumerate(val_loader):
-                batch_val_X_encoded = self.model_self.input_layer(batch_val_X.to(self.device))
+                batch_val_X_encoded = self.encoder_layer(batch_val_X.to(self.device))
                 y_hat = self.model_semi(batch_val_X_encoded)
 
                 if self.args.objective == "regression" or self.args.objective == "binary":

@@ -85,13 +85,14 @@ class NAM(BaseModelTorch):
 
         predictions = []
         with torch.no_grad():
-            for batch_X in testloader:
-                preds = self.model(batch_X[0])[0]  # .to(self.device)
+            for batch in testloader:
+                batch_X = batch[0].to(self.device)
+                preds = self.model(batch_X)[0]  # .to(self.device)
 
                 if self.args.objective == "binary":
                     preds = torch.sigmoid(preds)
 
-                predictions.append(preds)  # .detach().cpu().numpy()
+                predictions.append(preds.detach().cpu().numpy())
 
         return np.concatenate(predictions).reshape(-1, 1)
 

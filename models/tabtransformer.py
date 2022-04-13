@@ -40,7 +40,9 @@ class TabTransformer(BaseModelTorch):
             attn_dropout=self.params["dropout"],
             ff_dropout=self.params["dropout"],
             mlp_hidden_mults=(4, 2)
-        ).to(self.device)
+        )  # .to(self.device)
+
+        self.to_device()
 
     def fit(self, X, y, X_val=None, y_val=None):
         learning_rate = 10 ** self.params["learning_rate"]

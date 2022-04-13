@@ -50,6 +50,9 @@ class SAINT(BaseModelTorch):
             y_dim=args.num_classes
         )
 
+        self.model.transformer = nn.DataParallel(self.model.transformer, device_ids=self.args.gpu_ids)
+        self.model.mlpfory = nn.DataParallel(self.model.mlpfory, device_ids=self.args.gpu_ids)
+
     def fit(self, X, y, X_val=None, y_val=None):
 
         if self.args.objective == 'binary':

@@ -17,8 +17,8 @@ class DANet(BaseModelTorch):
     def __init__(self, params, args):
         super().__init__(params, args)
 
-        os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu_ids[0])
-        self.n_gpu = 1  # len(args.gpu_ids)
+        os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu_ids[0]
+        self.n_gpu = len(args.gpu_ids)
 
         # No distinction between binary and multiclass classification
         self.task = "regression" if args.objective == "regression" else "classification"
@@ -34,10 +34,10 @@ class DANet(BaseModelTorch):
             "optimizer_params": dict(lr=0.008, weight_decay=1e-5, nus=(0.8, 1.0)),
             "scheduler_params": dict(gamma=0.95, step_size=20),
             "scheduler_fn": torch.optim.lr_scheduler.StepLR,
-            #"layer": self.model_config['layer'],
-            #"base_outdim": self.model_config['base_outdim'],
-            #"k": self.model_config['k'],
-            #"drop_rate": self.model_config['drop_rate'],
+            # "layer": self.model_config['layer'],
+            # "base_outdim": self.model_config['base_outdim'],
+            # "k": self.model_config['k'],
+            # "drop_rate": self.model_config['drop_rate'],
             "seed": cfg.seed,
             **params
         }

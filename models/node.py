@@ -46,6 +46,7 @@ class NODE(BaseModelTorch):
         print("On:", self.device)
 
         self.trainer = None
+        self.to_device()
 
     def fit(self, X, y, X_val=None, y_val=None):
         data = node_lib.Dataset(self.args.dataset, random_state=815,
