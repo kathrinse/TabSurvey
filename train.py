@@ -1,3 +1,6 @@
+import logging
+import sys
+
 import optuna
 
 from models import str2model
@@ -102,7 +105,14 @@ def main(args):
 
     model_name = str2model(args.model_name)
 
-    study = optuna.create_study(direction=args.direction)
+    optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
+    study_name = args.model_name + "_" + args.dataset
+    storage_name = "sqlite:///{}.db".format(study_name)
+
+    study = optuna.create_study(direction=args.direction,
+                                study_name=study_name,
+                                storage=storage_name,
+                                load_if_exists=True)
     study.optimize(Objective(args, model_name, X, y), n_trials=args.n_trials)
     print("Best parameters:", study.best_trial.params)
 
