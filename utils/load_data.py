@@ -73,7 +73,7 @@ def load_data(args):
         X = df[features].to_numpy()
         y = df[label].to_numpy()
 
-    elif args.dataset == "HIGGS":  # Binary classification dataset with categorical data
+    elif args.dataset == "HIGGS":  # Binary classification dataset with one categorical feature
         path = "/opt/notebooks/data/HIGGS.csv.gz"
         df = pd.read_csv(path, header=None)
         df.columns = ['x' + str(i) for i in range(df.shape[1])]
@@ -95,6 +95,14 @@ def load_data(args):
         df.fillna(0, inplace=True)
 
         X = df[num_col + cat_col].to_numpy()
+        y = df[label_col].to_numpy()
+
+    elif args.dataset == "Heloc":  # Binary classification dataset without categorical data
+        path = "heloc_cleaned.csv"  # Missing values already filtered
+        df = pd.read_csv(path)
+        label_col = 'RiskPerformance'
+
+        X = df.drop(label_col, axis=1).to_numpy()
         y = df[label_col].to_numpy()
 
     else:
