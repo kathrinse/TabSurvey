@@ -19,7 +19,7 @@ class TabNet(BaseModelTorch):
         # Paper recommends to be n_d and n_a the same
         self.params["n_a"] = self.params["n_d"]
 
-        self.params["cat_idxs"] = args.cat_idx
+        self.params["cat_idxs"] = args.cat_idx if args.cat_idx else []
         self.params["cat_dims"] = args.cat_dims
 
         self.params["device_name"] = self.device
@@ -34,6 +34,8 @@ class TabNet(BaseModelTorch):
     def fit(self, X, y, X_val=None, y_val=None):
         if self.args.objective == "regression":
             y, y_val = y.reshape(-1, 1), y_val.reshape(-1, 1)
+        
+        X = X.astype(np.float32)
 
         self.model.fit(X, y, eval_set=[(X_val, y_val)], eval_name=["eval"], eval_metric=self.metric,
                        max_epochs=self.args.epochs, patience=self.args.early_stopping_rounds,
