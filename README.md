@@ -131,11 +131,15 @@ It is recommended to specify the remaining hyperparameters here as well.
 
 ## Citation  
 If you use this codebase, please cite our work:
-```
-@article{borisov2021deep,
-  title={Deep neural networks and tabular data: A survey},
-  author={Borisov, Vadim and Leemann, Tobias and Se{\ss}ler, Kathrin and Haug, Johannes and Pawelczyk, Martin and Kasneci, Gjergji},
-  journal={arXiv preprint arXiv:2110.01889},
-  year={2021}
+```bib
+@article{borisov2022deep,
+ author={Borisov, Vadim and Leemann, Tobias and Seßler, Kathrin and Haug, Johannes and Pawelczyk, Martin and Kasneci, Gjergji},
+  journal={IEEE Transactions on Neural Networks and Learning Systems}, 
+  title={Deep Neural Networks and Tabular Data: A Survey}, 
+  year={2022},
+  volume={},
+  number={},
+  pages={1-21},
+  doi={10.1109/TNNLS.2022.3229161}
 }
 ```
